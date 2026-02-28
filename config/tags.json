@@ -1,0 +1,30 @@
+{
+  "version": 7,
+  "updatedAt": "2026-02-28T08:09:56.947Z",
+  "tags": [
+    {
+      "name": "自定义数据",
+      "key": "UserData",
+      "type": "text",
+      "color": "#e37318",
+      "description": "合同相关回调中的 UserData 字段，用于按自定义业务数据过滤分发",
+      "builtIn": true,
+      "fieldPath": "MsgData.UserData",
+      "id": "36b40ae6-ff04-4d33-b30d-8c7f95c621e5",
+      "createdAt": "2026-02-28T08:08:01.217Z",
+      "updatedAt": "2026-02-28T08:08:01.217Z"
+    },
+    {
+      "name": "合同类型",
+      "key": "FlowType",
+      "type": "text",
+      "color": "#0052d9",
+      "description": "合同相关回调中的 FlowType 字段，用于按合同类型过滤分发",
+      "builtIn": true,
+      "fieldPath": "MsgData.FlowType",
+      "id": "d16d9f30-f598-4f39-a3e9-6998c047223e",
+      "createdAt": "2026-02-28T08:08:01.215Z",
+      "updatedAt": "2026-02-28T08:08:01.215Z"
+    }
+  ]
+}

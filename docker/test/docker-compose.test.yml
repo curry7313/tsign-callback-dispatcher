@@ -1,0 +1,97 @@
+version: '3.8'
+
+# 测试环境：三实例分发链路
+# - dispatcher (A): 分发服务，端口 5001，接收上游请求并分发到 B 和 C
+# - receiver-b (B): 下游接收者，端口 5002
+# - receiver-c (C): 下游接收者，端口 5003
+# - frontend: 管理前端，端口 5080，连接 dispatcher
+
+services:
+  dispatcher:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile.backend
+    container_name: test-dispatcher
+    restart: "no"
+    ports:
+      - "5001:3001"
+    volumes:
+      - ./config/dispatcher:/app/config
+      - ./logs/dispatcher:/app/logs
+    environment:
+      - NODE_ENV=test
+      - LOG_LEVEL=debug
+    networks:
+      - test-net
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3001/api/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  receiver-b:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile.backend
+    container_name: test-receiver-b
+    restart: "no"
+    ports:
+      - "5002:3001"
+    volumes:
+      - ./config/receiver-b:/app/config
+      - ./logs/receiver-b:/app/logs
+    environment:
+      - NODE_ENV=test
+      - LOG_LEVEL=debug
+    networks:
+      - test-net
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.:3001/api/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  receiver-c:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile.backend
+    container_name: test-receiver-c
+    restart: "no"
+    ports:
+      - "5003:3001"
+    volumes:
+      - ./config/receiver-c:/app/config
+      - ./logs/receiver-c:/app/logs
+    environment:
+      - NODE_ENV=test
+      - LOG_LEVEL=debug
+    networks:
+      - test-net
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3001/api/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile.frontend
+    container_name: test-frontend
+    restart: "no"
+    ports:
+      - "5080:80"
+    volumes:
+      - ./nginx.test.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      dispatcher:
+        condition: service_healthy
+    networks:
+      - test-net
+
+networks:
+  test-net:
+    driver: bridge

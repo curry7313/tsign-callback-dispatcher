@@ -1,0 +1,11 @@
+{
+  "MsgType": "FlowStatusChange",
+  "MsgId": "test-msg-001",
+  "FlowId": "flow-test-123",
+  "BusinessId": "biz-test-456",
+  "FlowName": "测试合同",
+  "FlowStatus": 2,
+  "FlowMessage": "合同已完成签署",
+  "CreateOn": 1700000000,
+  "UpdatedOn": 1700001000
+}

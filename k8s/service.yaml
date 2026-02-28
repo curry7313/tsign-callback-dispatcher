@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: tsign-dispatcher-backend
+  namespace: default
+  labels:
+    app: tsign-dispatcher
+    component: backend
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3001
+      targetPort: 3001
+      protocol: TCP
+      name: http
+  selector:
+    app: tsign-dispatcher
+    component: backend
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tsign-dispatcher-frontend
+  namespace: default
+  labels:
+    app: tsign-dispatcher
+    component: frontend
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
+  selector:
+    app: tsign-dispatcher
+    component: frontend

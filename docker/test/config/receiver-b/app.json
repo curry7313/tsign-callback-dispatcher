@@ -1,0 +1,19 @@
+{
+  "server": {
+    "port": 3001,
+    "host": "0.0.0.0"
+  },
+  "tsign": {
+    "encryptKey": "BB23FB38AE1D47B09D939CFBAE64195B",
+    "token": "test_receiver_b_token_123456"
+  },
+  "dispatch": {
+    "defaultTimeout": 10000,
+    "defaultRetryCount": 3,
+    "retryDelay": 1000
+  },
+  "log": {
+    "level": "debug",
+    "maxFiles": 7
+  }
+}

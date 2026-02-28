@@ -1,0 +1,18 @@
+node_modules/
+dist/
+.env
+logs/
+config/versions/
+config/operation-logs.json
+*.log
+.DS_Store
+
+# IDE & tools
+.dev-pids/
+.playwright-mcp/
+
+# Lock files (各子项目独立管理)
+package-lock.json
+
+# Docker test artifacts
+docker/test/k6/results/

@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tsign-dispatcher-config
+  namespace: default
+  labels:
+    app: tsign-dispatcher
+data:
+  app.json: |
+    {
+      "server": {
+        "port": 3001,
+        "host": "0.0.0.0"
+      },
+      "tsign": {
+        "encryptKey": "",
+        "token": ""
+      },
+      "dispatch": {
+        "defaultTimeout": 10000,
+        "defaultRetryCount": 3,
+        "retryDelay": 1000
+      },
+      "log": {
+        "level": "info",
+        "maxFiles": 30
+      }
+    }
+  callbacks.json: |
+    {
+      "version": 1,
+      "updatedAt": "",
+      "callbacks": []
+    }
+  tags.json: |
+    {
+      "version": 1,
+      "updatedAt": "",
+      "tags": []
+    }
