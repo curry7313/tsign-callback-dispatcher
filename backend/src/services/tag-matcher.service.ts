@@ -5,12 +5,29 @@ import logger from './logger.service';
 
 // Regex cache to avoid recompiling on every match
 const regexCache = new Map<string, RegExp>();
-function getCachedRegex(pattern: string): RegExp {
+const REGEX_MAX_LENGTH = 200;
+const REDOS_PATTERN = /(\.\*){3,}|(\+\+)|(\*\*)|(\?\?)|((\\.|\[.*?\])\{[^}]*,[^}]*\}){2,}/;
+
+function isSafeRegex(pattern: string): boolean {
+  if (pattern.length > REGEX_MAX_LENGTH) return false;
+  if (REDOS_PATTERN.test(pattern)) return false;
+  return true;
+}
+
+function getCachedRegex(pattern: string): RegExp | null {
   let re = regexCache.get(pattern);
   if (!re) {
-    re = new RegExp(pattern, 'i');
+    if (!isSafeRegex(pattern)) {
+      logger.warn(`Rejected potentially unsafe regex pattern: ${pattern.substring(0, 50)}...`);
+      return null;
+    }
+    try {
+      re = new RegExp(pattern, 'i');
+    } catch {
+      logger.warn(`Invalid regex pattern: ${pattern.substring(0, 50)}`);
+      return null;
+    }
     regexCache.set(pattern, re);
-    // Prevent unbounded growth
     if (regexCache.size > 500) {
       const firstKey = regexCache.keys().next().value;
       if (firstKey !== undefined) regexCache.delete(firstKey);
@@ -45,6 +62,7 @@ function matchRule(value: any, rule: TagMatchRule): boolean {
 
     case 'regex': {
       const regex = getCachedRegex(String(rule.value));
+      if (!regex) return false;
       return regex.test(strValue);
     }
 

@@ -18,9 +18,13 @@ spec:
         app: tsign-dispatcher
         component: backend
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
       containers:
         - name: backend
-          image: tsign-dispatcher-backend:latest
+          image: ccr.ccs.tencentyun.com/pulse-line-prod/tsign-dispatcher-backend:latest
           ports:
             - containerPort: 3001
           env:
@@ -28,6 +32,18 @@ spec:
               value: production
             - name: LOG_LEVEL
               value: info
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: tsign-dispatcher-secret
+                  key: JWT_SECRET
+            - name: ADMIN_DEFAULT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: tsign-dispatcher-secret
+                  key: ADMIN_DEFAULT_PASSWORD
+            - name: JWT_EXPIRES_IN
+              value: "24h"
           volumeMounts:
             - name: config
               mountPath: /app/config
@@ -52,6 +68,12 @@ spec:
             limits:
               cpu: 500m
               memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
       volumes:
         - name: config
           configMap:

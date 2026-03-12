@@ -1,9 +1,12 @@
 node_modules/
 dist/
 .env
+.env.*
+!.env.example
 logs/
 config/versions/
 config/operation-logs.json
+config/users.json
 *.log
 .DS_Store
 

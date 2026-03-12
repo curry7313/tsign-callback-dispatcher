@@ -15,12 +15,20 @@ export async function handleCallback(req: Request, res: Response): Promise<void>
 
     logger.info('Received callback from TSign');
 
-    // Verify signature if parameters present
+    // Verify signature (mandatory in production)
     if (msg_signature && timestamp && nonce && body.encrypt) {
       const valid = verifyCallbackSignature(timestamp, nonce, body.encrypt, msg_signature);
       if (!valid) {
         logger.warn('Callback signature verification failed');
         res.status(403).json({ code: 403, message: 'Signature verification failed' });
+        return;
+      }
+    } else if (process.env.NODE_ENV === 'production') {
+      // In production, signature parameters are mandatory when token is configured
+      const { token } = require('../config/app.config').appConfig.tsign;
+      if (token) {
+        logger.warn('Missing signature parameters in production with token configured');
+        res.status(403).json({ code: 403, message: 'Signature verification required' });
         return;
       }
     }

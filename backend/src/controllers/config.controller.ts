@@ -124,14 +124,21 @@ export function rollback(req: Request, res: Response): void {
 }
 
 // ========== TSign Config ==========
+function maskSecret(secret: string): string {
+  if (!secret || secret.length <= 8) return secret ? '********' : '';
+  return secret.substring(0, 4) + '****' + secret.substring(secret.length - 4);
+}
+
 export function getTSignConfig(req: Request, res: Response): void {
   const config = loadAppConfig();
   res.json({
     code: 0,
     message: 'success',
     data: {
-      encryptKey: config.tsign.encryptKey || '',
-      token: config.tsign.token || '',
+      encryptKey: maskSecret(config.tsign.encryptKey || ''),
+      token: maskSecret(config.tsign.token || ''),
+      hasEncryptKey: !!config.tsign.encryptKey,
+      hasToken: !!config.tsign.token,
     },
   });
 }

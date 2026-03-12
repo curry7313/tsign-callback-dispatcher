@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { DispatchConfig, TagDefinition, OperationLog, TSignConfig, ApiResponse } from '../types/api.types';
+import { getToken, clearAuth } from './auth';
 
 const api = axios.create({
   baseURL: '/api',
@@ -7,13 +8,44 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+// Request interceptor: attach auth token
+api.interceptors.request.use((config) => {
+  const token = getToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Response interceptor: handle 401 (expired/invalid token)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error('API Error:', error.message);
+    if (error.response?.status === 401) {
+      clearAuth();
+      // Redirect to login if not already there
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
     return Promise.reject(error);
   }
 );
+
+// Auth
+export async function login(username: string, password: string): Promise<{ token: string; username: string }> {
+  const res = await api.post<ApiResponse<{ token: string; username: string }>>('/auth/login', { username, password });
+  return res.data.data!;
+}
+
+export async function changePassword(oldPassword: string, newPassword: string): Promise<void> {
+  await api.put('/auth/password', { oldPassword, newPassword });
+}
+
+export async function fetchProfile(): Promise<{ username: string }> {
+  const res = await api.get<ApiResponse<{ username: string }>>('/auth/profile');
+  return res.data.data!;
+}
 
 // Callbacks
 export async function fetchCallbacks(): Promise<DispatchConfig[]> {

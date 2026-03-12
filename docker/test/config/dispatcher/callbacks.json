@@ -1,6 +1,6 @@
 {
-  "version": 7,
-  "updatedAt": "2026-02-28T10:55:59.917Z",
+  "version": 8,
+  "updatedAt": "2026-03-02T08:02:28.457Z",
   "callbacks": [
     {
       "id": "test-receiver-b",
@@ -105,8 +105,8 @@
       "reEncrypt": true,
       "remark": "测试下游接收者 C（二次加密）",
       "createdAt": "2026-01-01T00:00:00.000Z",
-      "updatedAt": "2026-02-28T10:55:59.917Z",
-      "builtInTagMissPolicy": "discard"
+      "updatedAt": "2026-03-02T08:02:28.457Z",
+      "builtInTagMissPolicy": "dispatch"
     }
   ]
 }

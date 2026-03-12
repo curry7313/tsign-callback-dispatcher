@@ -1,0 +1,59 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tsign-dispatcher-ingress
+  namespace: default
+  labels:
+    app: tsign-dispatcher
+  annotations:
+    # Uncomment for TLS with cert-manager:
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+
+    # Rate limiting at ingress level
+    nginx.ingress.kubernetes.io/limit-rps: "50"
+    nginx.ingress.kubernetes.io/limit-connections: "20"
+
+    # Restrict management UI to internal network (customize CIDR as needed)
+    # Uncomment to restrict:
+    # nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+
+    # Security headers
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      add_header X-Frame-Options "SAMEORIGIN" always;
+      add_header X-Content-Type-Options "nosniff" always;
+      add_header X-XSS-Protection "1; mode=block" always;
+spec:
+  ingressClassName: nginx
+  # Uncomment for TLS:
+  # tls:
+  #   - hosts:
+  #       - tsign-dispatcher.your-domain.com
+  #     secretName: tsign-dispatcher-tls
+  rules:
+    - host: tsign-dispatcher.your-domain.com
+      http:
+        paths:
+          # Callback endpoint - publicly accessible
+          - path: /api/callback
+            pathType: Exact
+            backend:
+              service:
+                name: tsign-dispatcher-frontend
+                port:
+                  number: 80
+          # Health check - publicly accessible
+          - path: /api/health
+            pathType: Exact
+            backend:
+              service:
+                name: tsign-dispatcher-frontend
+                port:
+                  number: 80
+          # All other paths go through frontend (nginx handles reverse proxy to backend)
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: tsign-dispatcher-frontend
+                port:
+                  number: 80
