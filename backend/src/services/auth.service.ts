@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { getConfigStore } from '../store';
+import { maskUser } from '../utils/string.util';
 import logger from './logger.service';
 
 interface UserRecord {
@@ -32,13 +33,6 @@ function getJwtSecret(): string {
   return 'tsign-dispatcher-default-secret-DO-NOT-USE-IN-PROD';
 }
 const JWT_SECRET = getJwtSecret();
-
-/** Mask username: keep first char, mask the rest with '*' */
-function maskUser(name: string): string {
-  if (!name) return '***';
-  if (name.length <= 1) return name[0] + '**';
-  return name[0] + '*'.repeat(Math.min(name.length - 1, 5));
-}
 
 async function loadUsers(): Promise<UsersFile> {
   const data = await getConfigStore().read<UsersFile>(USERS_KEY, { users: [] });
@@ -132,8 +126,9 @@ export async function verifyToken(token: string): Promise<{ username: string } |
     }
 
     return { username: decoded.username };
-  } catch (err: any) {
-    logger.debug(`Token verification failed: ${err.message}`);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    logger.debug(`Token verification failed: ${message}`);
     return null;
   }
 }

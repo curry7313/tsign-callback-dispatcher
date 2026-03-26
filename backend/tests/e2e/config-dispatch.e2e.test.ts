@@ -13,8 +13,8 @@ import {
 import { buildEncryptedCallback, buildMockMessage } from '../helpers/crypto-helpers';
 import { generateEncryptKey, generateSignToken } from '../../src/utils/crypto.util';
 
-const DISPATCHER_PORT = 4001;
-const RECEIVER_PORT = 4002;
+const DISPATCHER_PORT = 14001;
+const RECEIVER_PORT = 14002;
 
 const ENCRYPT_KEY = generateEncryptKey();
 const TOKEN = generateSignToken();
@@ -39,7 +39,7 @@ describe('E2E: 配置变更生效验证', () => {
       { port: DISPATCHER_PORT, encryptKey: ENCRYPT_KEY, token: TOKEN },
       configDir
     );
-  }, 30000);
+  }, 60000);
 
   afterAll(async () => {
     await stopDispatcher(dispatcher);
@@ -50,15 +50,15 @@ describe('E2E: 配置变更生效验证', () => {
   afterEach(async () => {
     receiver.clearReceived();
     // Clean up all callbacks to isolate tests
-    const res = await axios.get(`${dispatcher.apiBase}/callbacks`);
+    const res = await dispatcher.api.get('/callbacks');
     const allCallbacks = res.data?.data || [];
     for (const cb of allCallbacks) {
-      await axios.delete(`${dispatcher.apiBase}/callbacks/${cb.id}`).catch(() => {});
+      await dispatcher.api.delete(`/callbacks/${cb.id}`).catch(() => {});
     }
   });
 
   async function createCallbackConfig(overrides: Record<string, any> = {}) {
-    const res = await axios.post(`${dispatcher.apiBase}/callbacks`, {
+    const res = await dispatcher.api.post('/callbacks', {
       name: `test-${Date.now()}`,
       url: `${receiver.url}/callback`,
       appType: 'company',
@@ -94,7 +94,7 @@ describe('E2E: 配置变更生效验证', () => {
   it('2. 禁用配置后，不再分发', async () => {
     const config = await createCallbackConfig();
 
-    await axios.put(`${dispatcher.apiBase}/callbacks/${config.id}`, { enabled: false });
+    await dispatcher.api.put(`/callbacks/${config.id}`, { enabled: false });
     await waitMs(300);
 
     await sendTestCallback();
@@ -110,7 +110,7 @@ describe('E2E: 配置变更生效验证', () => {
     await waitMs(500);
     expect(receiver.getReceived().length).toBe(0);
 
-    await axios.put(`${dispatcher.apiBase}/callbacks/${config.id}`, { enabled: true });
+    await dispatcher.api.put(`/callbacks/${config.id}`, { enabled: true });
     await waitMs(300);
 
     await sendTestCallback();
@@ -152,7 +152,7 @@ describe('E2E: 配置变更生效验证', () => {
     receiver.clearReceived();
 
     // 切换为 discard 模式
-    await axios.put(`${dispatcher.apiBase}/callbacks/${config.id}`, {
+    await dispatcher.api.put(`/callbacks/${config.id}`, {
       unknownMsgTypePolicy: 'discard',
     });
     await waitMs(300);
@@ -173,7 +173,7 @@ describe('E2E: 配置变更生效验证', () => {
 
     receiver.clearReceived();
 
-    await axios.delete(`${dispatcher.apiBase}/callbacks/${config.id}`);
+    await dispatcher.api.delete(`/callbacks/${config.id}`);
     await waitMs(300);
 
     await sendTestCallback();

@@ -8,12 +8,12 @@ import {
   InfoCircleIcon, AddCircleIcon, CloseIcon, ChevronDownIcon, ChevronRightIcon,
 } from 'tdesign-icons-react';
 import { fetchCallbacks, createCallback, updateCallback, deleteCallback, fetchTags, generateKeys } from '../lib/api';
-import { DispatchConfig, TagDefinition, TagValue, AppType, UnknownMsgTypePolicy, BuiltInTagMissPolicy } from '../types/api.types';
+import { DispatchConfig, TagDefinition, TagValue, TagMatchRule, AppType, UnknownMsgTypePolicy, BuiltInTagMissPolicy } from '../types/api.types';
 import { getEventCategories, getAllEventValues, getEventLabel, CallbackEventCategory } from '../constants/callbackEvents';
 import TagRuleEditor from '../components/TagManager/TagRuleEditor';
 
 const INITIAL_FORM_DATA = {
-  name: '', url: '', appType: 'company' as AppType, tags: [] as TagValue[], matchRules: [] as any[], enabled: true,
+  name: '', url: '', appType: 'company' as AppType, tags: [] as TagValue[], matchRules: [] as TagMatchRule[], enabled: true,
   retryCount: 3, timeout: 10000, headers: {} as Record<string, string>, msgTypes: [] as string[],
   unknownMsgTypePolicy: 'dispatch' as UnknownMsgTypePolicy,
   builtInTagMissPolicy: 'dispatch' as BuiltInTagMissPolicy,
@@ -140,6 +140,8 @@ const EventCategoryPicker: React.FC<{
   );
 });
 
+type CallbackFormData = typeof INITIAL_FORM_DATA;
+
 /* ============ 主页面 ============ */
 const CallbackManagementPage: React.FC = () => {
   const [callbacks, setCallbacks] = useState<DispatchConfig[]>([]);
@@ -147,7 +149,7 @@ const CallbackManagementPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [dialogVisible, setDialogVisible] = useState(false);
   const [editingCallback, setEditingCallback] = useState<DispatchConfig | null>(null);
-  const [formData, setFormData] = useState<any>({ ...INITIAL_FORM_DATA });
+  const [formData, setFormData] = useState<CallbackFormData>({ ...INITIAL_FORM_DATA });
   const [tagRows, setTagRows] = useState<TagValue[]>([]);
 
   useEffect(() => {
@@ -232,7 +234,7 @@ const CallbackManagementPage: React.FC = () => {
   const handleGenerateKey = async (field: 'encryptKey' | 'signToken') => {
     try {
       const keys = await generateKeys();
-      setFormData((prev: any) => ({ ...prev, [field]: keys[field] }));
+      setFormData((prev: CallbackFormData) => ({ ...prev, [field]: keys[field] }));
       MessagePlugin.success('已生成');
     } catch {
       MessagePlugin.error('生成失败');
@@ -259,7 +261,7 @@ const CallbackManagementPage: React.FC = () => {
     const newAppType = val as AppType;
     // 切换应用类型时默认全选新类型的所有事件
     const allEvents = getAllEventValues(newAppType);
-    setFormData((prev: any) => ({
+    setFormData((prev: CallbackFormData) => ({
       ...prev,
       appType: newAppType,
       msgTypes: allEvents,
@@ -268,7 +270,7 @@ const CallbackManagementPage: React.FC = () => {
 
   // Stable callback for EventCategoryPicker to enable React.memo
   const handleMsgTypesChange = useCallback((vals: string[]) => {
-    setFormData((prev: any) => ({ ...prev, msgTypes: vals }));
+    setFormData((prev: CallbackFormData) => ({ ...prev, msgTypes: vals }));
   }, []);
 
   const columns = [
@@ -276,7 +278,7 @@ const CallbackManagementPage: React.FC = () => {
       colKey: 'name',
       title: '配置名称',
       width: 180,
-      cell: ({ row }: any) => (
+      cell: ({ row }: { row: DispatchConfig }) => (
         <div className="flex items-center gap-2">
           <div className={`w-2 h-2 rounded-full ${row.enabled ? 'bg-green-400' : 'bg-gray-300'}`} />
           <span className="font-medium">{row.name}</span>
@@ -287,7 +289,7 @@ const CallbackManagementPage: React.FC = () => {
       colKey: 'appType',
       title: '应用类型',
       width: 120,
-      cell: ({ row }: any) => (
+      cell: ({ row }: { row: DispatchConfig }) => (
         <Tag size="small" variant="light" theme={row.appType === 'partner' ? 'warning' : 'primary'}>
           {row.appType === 'partner' ? '第三方应用' : '自建应用'}
         </Tag>
@@ -297,13 +299,13 @@ const CallbackManagementPage: React.FC = () => {
       colKey: 'url',
       title: '回调地址',
       ellipsis: true,
-      cell: ({ row }: any) => <span className="text-gray-600 text-sm">{row.url}</span>,
+      cell: ({ row }: { row: DispatchConfig }) => <span className="text-gray-600 text-sm">{row.url}</span>,
     },
     {
       colKey: 'msgTypes',
       title: '回调事件',
       width: 220,
-      cell: ({ row }: any) => {
+      cell: ({ row }: { row: DispatchConfig }) => {
         const appType = row.appType || 'company';
         return (
           <div className="flex flex-wrap gap-1">
@@ -315,7 +317,7 @@ const CallbackManagementPage: React.FC = () => {
             ) : (
               <span className="text-gray-400 text-xs">全部事件</span>
             )}
-            {row.msgTypes?.length > 3 && <Tag size="small" variant="light">+{row.msgTypes.length - 3}</Tag>}
+            {(row.msgTypes?.length ?? 0) > 3 && <Tag size="small" variant="light">+{row.msgTypes!.length - 3}</Tag>}
           </div>
         );
       },
@@ -324,7 +326,7 @@ const CallbackManagementPage: React.FC = () => {
       colKey: 'tags',
       title: '标签',
       width: 250,
-      cell: ({ row }: any) => (
+      cell: ({ row }: { row: DispatchConfig }) => (
         <div className="flex flex-wrap gap-1">
           {row.tags?.length ? (
             row.tags.map((t: TagValue, i: number) => {
@@ -345,7 +347,7 @@ const CallbackManagementPage: React.FC = () => {
       colKey: 'enabled',
       title: '状态',
       width: 100,
-      cell: ({ row }: any) => (
+      cell: ({ row }: { row: DispatchConfig }) => (
         <Tag theme={row.enabled ? 'success' : 'default'} variant="light" icon={row.enabled ? <CheckCircleIcon /> : <CloseCircleIcon />}>
           {row.enabled ? '启用' : '禁用'}
         </Tag>
@@ -356,20 +358,20 @@ const CallbackManagementPage: React.FC = () => {
       title: '备注',
       width: 150,
       ellipsis: true,
-      cell: ({ row }: any) => <span className="text-gray-500 text-sm">{row.remark || '-'}</span>,
+      cell: ({ row }: { row: DispatchConfig }) => <span className="text-gray-500 text-sm">{row.remark || '-'}</span>,
     },
     {
       colKey: 'updatedAt',
       title: '更新时间',
       width: 180,
-      cell: ({ row }: any) => row.updatedAt ? new Date(row.updatedAt).toLocaleString('zh-CN') : '-',
+      cell: ({ row }: { row: DispatchConfig }) => row.updatedAt ? new Date(row.updatedAt).toLocaleString('zh-CN') : '-',
     },
     {
       colKey: 'actions',
       title: '操作',
       width: 220,
       fixed: 'right' as const,
-      cell: ({ row }: any) => (
+      cell: ({ row }: { row: DispatchConfig }) => (
         <Space>
           <Button theme="primary" variant="text" size="small" onClick={() => handleToggleEnabled(row)}>
             {row.enabled ? '禁用' : '启用'}
@@ -707,7 +709,7 @@ const CallbackManagementPage: React.FC = () => {
             <div className="flex-1 flex items-start gap-4">
               <InputNumber
                 value={formData.retryCount}
-                onChange={(val) => setFormData({ ...formData, retryCount: val })}
+                onChange={(val) => setFormData({ ...formData, retryCount: Number(val) || 0 })}
                 min={0}
                 max={10}
                 style={{ width: '100%' }}
@@ -720,7 +722,7 @@ const CallbackManagementPage: React.FC = () => {
             <div className="flex-1">
               <InputNumber
                 value={formData.timeout}
-                onChange={(val) => setFormData({ ...formData, timeout: val })}
+                onChange={(val) => setFormData({ ...formData, timeout: Number(val) || 10000 })}
                 min={1000}
                 max={60000}
                 step={1000}

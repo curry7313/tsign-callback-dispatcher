@@ -4,8 +4,9 @@ import { decryptCallbackMessage, verifyCallbackSignature } from '../services/dec
 import { dispatchMessage } from '../services/dispatch.service';
 import logger from '../services/logger.service';
 
+/** Maximum number of received callbacks to keep in memory (test mode only) */
 const MAX_RECEIVED = 50;
-let receivedCallbacks: Array<{ msgId: string; msgType: string; receivedAt: string }> = [];
+let receivedCallbacks: Array<{ msgId: string; msgType: string; receivedAt: string; message: Record<string, unknown> }> = [];
 
 export async function handleCallback(req: Request, res: Response): Promise<void> {
   try {
@@ -42,9 +43,14 @@ export async function handleCallback(req: Request, res: Response): Promise<void>
       return;
     }
 
-    // Record received callback only in test environment (lightweight summary, not full payload)
+    // Record received callback only in test environment
     if (process.env.NODE_ENV === 'test') {
-      receivedCallbacks.push({ msgId: message.MsgId, msgType: message.MsgType, receivedAt: new Date().toISOString() });
+      receivedCallbacks.push({
+        msgId: message.MsgId,
+        msgType: message.MsgType,
+        receivedAt: new Date().toISOString(),
+        message: message as unknown as Record<string, unknown>,
+      });
       if (receivedCallbacks.length > MAX_RECEIVED) {
         receivedCallbacks = receivedCallbacks.slice(-MAX_RECEIVED);
       }

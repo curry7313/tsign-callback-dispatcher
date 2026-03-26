@@ -8,6 +8,7 @@ config/versions/
 config/operation-logs.json
 config/users.json
 *.log
+*.tsbuildinfo
 .DS_Store
 
 # IDE & tools
@@ -19,7 +20,9 @@ package-lock.json
 
 # K8s secrets (NEVER commit plaintext credentials)
 k8s/secret.yaml
-k8s-test/secret.yaml
+
+# K8s test manifests (local testing only)
+k8s-test/
 
 # Docker test artifacts
 docker/test/k6/results/

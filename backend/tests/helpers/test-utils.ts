@@ -47,16 +47,26 @@ export interface DispatcherInstance {
   configDir: string;
   logDir: string;
   apiBase: string;
+  /** Authenticated axios instance (auto-login with default admin credentials) */
+  api: ReturnType<typeof axios.create>;
 }
 
 export async function startDispatcher(config: TestConfig, configDir: string): Promise<DispatcherInstance> {
   const logDir = fs.mkdtempSync(path.join(os.tmpdir(), 'tsign-log-'));
   const backendDir = path.resolve(__dirname, '../../');
 
-  const child = spawn('npx', ['ts-node-dev', '--transpile-only', '--no-notify', 'src/app.ts'], {
+  // Use pre-compiled dist/app.js for faster startup; fall back to ts-node-dev if dist not built
+  const useCompiledDist = fs.existsSync(path.join(backendDir, 'dist', 'app.js'));
+  const command = useCompiledDist ? 'node' : 'npx';
+  const args = useCompiledDist
+    ? ['dist/app.js']
+    : ['ts-node-dev', '--transpile-only', '--no-notify', 'src/app.ts'];
+
+  const child = spawn(command, args, {
     cwd: backendDir,
     env: {
       ...process.env,
+      NODE_ENV: 'test',
       CONFIG_DIR: configDir,
       LOG_DIR: logDir,
       LOG_LEVEL: 'warn',
@@ -65,15 +75,25 @@ export async function startDispatcher(config: TestConfig, configDir: string): Pr
     detached: true,
   });
 
+  await waitForReady(config.port, 30000);
+
+  // Auto-login to get auth token for protected routes
+  const token = await loginAndGetToken(config.port);
+  const api = axios.create({
+    baseURL: `http://localhost:${config.port}/api`,
+    headers: { Authorization: `Bearer ${token}` },
+    timeout: 5000,
+  });
+
   const instance: DispatcherInstance = {
     process: child,
     port: config.port,
     configDir,
     logDir,
     apiBase: `http://localhost:${config.port}/api`,
+    api,
   };
 
-  await waitForReady(config.port, 15000);
   return instance;
 }
 
@@ -104,6 +124,14 @@ export async function waitForReady(port: number, timeoutMs = 15000): Promise<voi
   throw new Error(`Dispatcher on port ${port} not ready after ${timeoutMs}ms`);
 }
 
+/**
+ * Login with default admin credentials and return the JWT token.
+ */
+export async function loginAndGetToken(port: number, username = 'admin', password = 'admin123'): Promise<string> {
+  const res = await axios.post(`http://localhost:${port}/api/auth/login`, { username, password }, { timeout: 5000 });
+  return res.data?.data?.token || res.data?.token;
+}
+
 export function cleanupDir(dir: string): void {
   try {
     if (fs.existsSync(dir)) {
@@ -126,13 +154,17 @@ export async function sendCallback(
   return res.data;
 }
 
-export async function getReceivedCallbacks(port: number): Promise<any[]> {
-  const res = await axios.get(`http://localhost:${port}/api/received-callbacks`, { timeout: 5000 });
+export async function getReceivedCallbacks(port: number, token?: string): Promise<any[]> {
+  const headers: Record<string, string> = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await axios.get(`http://localhost:${port}/api/received-callbacks`, { timeout: 5000, headers });
   return res.data?.data || [];
 }
 
-export async function clearReceivedCallbacks(port: number): Promise<void> {
-  await axios.delete(`http://localhost:${port}/api/received-callbacks`, { timeout: 5000 });
+export async function clearReceivedCallbacks(port: number, token?: string): Promise<void> {
+  const headers: Record<string, string> = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+  await axios.delete(`http://localhost:${port}/api/received-callbacks`, { timeout: 5000, headers });
 }
 
 export function waitMs(ms: number): Promise<void> {

@@ -128,7 +128,7 @@ const TagManagementPage: React.FC = () => {
       colKey: 'name',
       title: '标签名称',
       width: 180,
-      cell: ({ row }: any) => (
+      cell: ({ row }: { row: TagDefinition }) => (
         <div className="flex items-center gap-2">
           <Tag
             size="medium"
@@ -151,13 +151,13 @@ const TagManagementPage: React.FC = () => {
       colKey: 'key',
       title: '标签键',
       width: 180,
-      cell: ({ row }: any) => <code className="text-sm bg-gray-100 px-2 py-0.5 rounded">{row.key || '-'}</code>,
+      cell: ({ row }: { row: TagDefinition }) => <code className="text-sm bg-gray-100 px-2 py-0.5 rounded">{row.key || '-'}</code>,
     },
     {
       colKey: 'type',
       title: '标签类型',
       width: 120,
-      cell: ({ row }: any) => (
+      cell: ({ row }: { row: TagDefinition }) => (
         <Tag size="small" variant="light" theme={row.type === 'select' ? 'primary' : 'default'}>
           {row.type === 'select' ? '下拉选择' : '文本输入'}
         </Tag>
@@ -167,7 +167,7 @@ const TagManagementPage: React.FC = () => {
       colKey: 'options',
       title: '可选值',
       ellipsis: true,
-      cell: ({ row }: any) => (
+      cell: ({ row }: { row: TagDefinition }) => (
         <div className="flex flex-wrap gap-1">
           {row.type === 'select' && row.options?.length ? (
             row.options.map((opt: string) => (
@@ -183,20 +183,20 @@ const TagManagementPage: React.FC = () => {
       colKey: 'description',
       title: '描述',
       ellipsis: true,
-      cell: ({ row }: any) => <span className="text-gray-500 text-sm">{row.description || '-'}</span>,
+      cell: ({ row }: { row: TagDefinition }) => <span className="text-gray-500 text-sm">{row.description || '-'}</span>,
     },
     {
       colKey: 'updatedAt',
       title: '更新时间',
       width: 180,
-      cell: ({ row }: any) => row.updatedAt ? new Date(row.updatedAt).toLocaleString('zh-CN') : '-',
+      cell: ({ row }: { row: TagDefinition }) => row.updatedAt ? new Date(row.updatedAt).toLocaleString('zh-CN') : '-',
     },
     {
       colKey: 'actions',
       title: '操作',
       width: 160,
       fixed: 'right' as const,
-      cell: ({ row }: any) => (
+      cell: ({ row }: { row: TagDefinition }) => (
         <Space>
           <Button theme="primary" variant="text" size="small" icon={<EditIcon />} onClick={() => handleEdit(row)}>
             编辑

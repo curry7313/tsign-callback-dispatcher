@@ -13,6 +13,16 @@ export function decryptAES256CBC(encryptedBase64: string, encryptKey: string): s
   return decrypted;
 }
 
+/**
+ * Compute SHA1 signature from token, timestamp, nonce, and encrypt (sorted).
+ * Shared core logic for both generateSignature and verifySignature.
+ */
+function computeSignature(token: string, timestamp: string, nonce: string, encrypt: string): string {
+  const sortedArr = [token, timestamp, nonce, encrypt].sort();
+  const str = sortedArr.join('');
+  return crypto.createHash('sha1').update(str).digest('hex');
+}
+
 export function verifySignature(
   token: string,
   timestamp: string,
@@ -20,10 +30,7 @@ export function verifySignature(
   encrypt: string,
   msgSignature: string
 ): boolean {
-  const sortedArr = [token, timestamp, nonce, encrypt].sort();
-  const str = sortedArr.join('');
-  const hash = crypto.createHash('sha1').update(str).digest('hex');
-  return hash === msgSignature;
+  return computeSignature(token, timestamp, nonce, encrypt) === msgSignature;
 }
 
 export function generateId(): string {
@@ -62,7 +69,5 @@ export function generateSignature(
   nonce: string,
   encrypt: string
 ): string {
-  const sortedArr = [token, timestamp, nonce, encrypt].sort();
-  const str = sortedArr.join('');
-  return crypto.createHash('sha1').update(str).digest('hex');
+  return computeSignature(token, timestamp, nonce, encrypt);
 }

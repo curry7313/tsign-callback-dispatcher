@@ -40,9 +40,9 @@ const MainLayout: React.FC = () => {
     navigate('/login', { replace: true });
   };
 
-  const handlePasswordSubmit = async (ctx: any) => {
+  const handlePasswordSubmit = async (ctx: { validateResult: boolean | Record<string, unknown>; fields?: Record<string, string> }) => {
     if (ctx.validateResult !== true) return;
-    const { oldPassword, newPassword, confirmPassword } = ctx.fields;
+    const { oldPassword, newPassword, confirmPassword } = ctx.fields || {};
 
     if (newPassword !== confirmPassword) {
       MessagePlugin.error('两次输入的密码不一致');
@@ -57,8 +57,9 @@ const MainLayout: React.FC = () => {
       // 强制登出：清除 token 并跳转到登录页
       clearAuth();
       navigate('/login', { replace: true });
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || '密码修改失败';
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      const msg = axiosErr?.response?.data?.message || '密码修改失败';
       MessagePlugin.error(msg);
     } finally {
       setPasswordLoading(false);
@@ -70,7 +71,7 @@ const MainLayout: React.FC = () => {
     { content: '退出登录', value: 'logout', prefixIcon: <LogoutIcon />, theme: 'error' as const },
   ];
 
-  const handleDropdownClick = (data: any) => {
+  const handleDropdownClick = (data: { value?: string | number | { [key: string]: unknown } }) => {
     if (data.value === 'logout') {
       handleLogout();
     } else if (data.value === 'password') {

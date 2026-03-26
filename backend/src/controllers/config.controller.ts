@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { AuthenticatedRequest } from '../middleware/auth.middleware';
 import * as configService from '../services/config.service';
 import { generateEncryptKey, generateSignToken } from '../utils/crypto.util';
+import { maskSecret } from '../utils/string.util';
 import { loadAppConfig, saveAppConfig } from '../config/app.config';
 
 // ========== Callbacks ==========
@@ -125,11 +126,6 @@ export async function rollback(req: AuthenticatedRequest, res: Response): Promis
 }
 
 // ========== TSign Config ==========
-function maskSecret(secret: string): string {
-  if (!secret || secret.length <= 8) return secret ? '********' : '';
-  return secret.substring(0, 4) + '****' + secret.substring(secret.length - 4);
-}
-
 export async function getTSignConfig(req: Request, res: Response): Promise<void> {
   const config = await loadAppConfig();
   res.json({

@@ -107,17 +107,18 @@ const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = async (ctx: any) => {
+  const handleSubmit = async (ctx: { validateResult: boolean | Record<string, unknown>; fields?: Record<string, string> }) => {
     if (ctx.validateResult !== true) return;
-    const { username, password } = ctx.fields;
+    const { username, password } = ctx.fields || {};
     setLoading(true);
     try {
       const data = await login(username, password);
       setAuth(data.token, data.username);
       MessagePlugin.success('登录成功');
       navigate('/', { replace: true });
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || '登录失败，请检查用户名和密码';
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      const msg = axiosErr?.response?.data?.message || '登录失败，请检查用户名和密码';
       MessagePlugin.error(msg);
     } finally {
       setLoading(false);

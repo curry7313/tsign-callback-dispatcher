@@ -1,14 +1,8 @@
 import { Request, Response } from 'express';
 import { authenticate, changePassword } from '../services/auth.service';
 import { AuthenticatedRequest } from '../middleware/auth.middleware';
+import { maskUser } from '../utils/string.util';
 import logger from '../services/logger.service';
-
-/** Mask username: keep first char, mask the rest with '*' */
-function maskUser(name: string): string {
-  if (!name) return '***';
-  if (name.length <= 1) return name[0] + '**';
-  return name[0] + '*'.repeat(Math.min(name.length - 1, 5));
-}
 
 export async function login(req: Request, res: Response): Promise<void> {
   const { username, password } = req.body;
@@ -31,8 +25,10 @@ export async function login(req: Request, res: Response): Promise<void> {
 
     logger.debug(`Login successful`, { user: masked });
     res.json({ code: 0, message: 'Login successful', data: { token, username } });
-  } catch (err: any) {
-    logger.error(`Login error: ${err.message}`, { user: masked, stack: err.stack });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    const stack = err instanceof Error ? err.stack : undefined;
+    logger.error(`Login error: ${message}`, { user: masked, stack });
     res.status(500).json({ code: 500, message: 'Internal server error' });
   }
 }
@@ -68,8 +64,10 @@ export async function updatePassword(req: AuthenticatedRequest, res: Response): 
 
     logger.info(`Password updated`, { user: masked });
     res.json({ code: 0, message: 'Password updated successfully, please re-login', data: { forceLogout: true } });
-  } catch (err: any) {
-    logger.error(`Password update error: ${err.message}`, { user: masked, stack: err.stack });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    const stack = err instanceof Error ? err.stack : undefined;
+    logger.error(`Password update error: ${message}`, { user: masked, stack });
     res.status(500).json({ code: 500, message: 'Internal server error' });
   }
 }

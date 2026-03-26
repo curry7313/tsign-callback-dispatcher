@@ -115,8 +115,15 @@ export async function fetchLogs(limit = 100, offset = 0): Promise<{ logs: Operat
 }
 
 // Health
-export async function fetchHealth(): Promise<any> {
-  const res = await api.get('/system-status');
+export interface SystemStatus {
+  status: string;
+  uptime: number;
+  memory: { heapUsed: number; heapTotal: number; rss: number };
+  timestamp: string;
+}
+
+export async function fetchHealth(): Promise<SystemStatus> {
+  const res = await api.get<SystemStatus>('/system-status');
   return res.data;
 }
 

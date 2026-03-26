@@ -6,6 +6,7 @@ import { loadAppConfig, getAppConfig, getStoreType } from './config/app.config';
 import { requestIdMiddleware } from './middleware/request-id.middleware';
 import { requestLogger } from './middleware/logger.middleware';
 import { authRequired } from './middleware/auth.middleware';
+import { asyncHandler } from './middleware/async-handler';
 import { validateCallbackBody, validateTagBody } from './middleware/validator.middleware';
 import { handleCallback, getReceivedCallbacks, clearReceivedCallbacks } from './controllers/callback.controller';
 import * as configCtrl from './controllers/config.controller';
@@ -52,17 +53,22 @@ app.use(express.urlencoded({ extended: true }));
 app.use(requestLogger);
 
 // ──── Rate Limiting ────
+const LOGIN_RATE_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const LOGIN_RATE_MAX = 10;
+const API_RATE_WINDOW_MS = 1 * 60 * 1000; // 1 minute
+const API_RATE_MAX = 200;
+
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
+  windowMs: LOGIN_RATE_WINDOW_MS,
+  max: LOGIN_RATE_MAX,
   message: { code: 429, message: 'Too many login attempts, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 const apiLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000,
-  max: 200,
+  windowMs: API_RATE_WINDOW_MS,
+  max: API_RATE_MAX,
   message: { code: 429, message: 'Too many requests' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -75,8 +81,8 @@ app.use('/api/', (req: Request, res: Response, next: NextFunction) => {
 
 // ──── Public Routes (no auth) ────
 app.get('/api/health', healthCheck);
-app.post('/api/callback', handleCallback);
-app.post('/api/auth/login', loginLimiter, authCtrl.login);
+app.post('/api/callback', asyncHandler(handleCallback));
+app.post('/api/auth/login', loginLimiter, asyncHandler(authCtrl.login));
 
 // ──── Protected Routes (auth required) ────
 app.get('/api/system-status', authRequired, systemStatus);
@@ -85,36 +91,36 @@ app.use('/api/auth/profile', authRequired);
 app.get('/api/auth/profile', authCtrl.getProfile);
 
 app.use('/api/auth/password', authRequired);
-app.put('/api/auth/password', authCtrl.updatePassword);
+app.put('/api/auth/password', asyncHandler(authCtrl.updatePassword));
 
 app.get('/api/received-callbacks', authRequired, getReceivedCallbacks);
 app.delete('/api/received-callbacks', authRequired, clearReceivedCallbacks);
 
 // Callback config CRUD
 app.get('/api/callbacks/generate-keys', authRequired, configCtrl.generateKeys);
-app.get('/api/callbacks', authRequired, configCtrl.getCallbacks);
-app.get('/api/callbacks/:id', authRequired, configCtrl.getCallback);
-app.post('/api/callbacks', authRequired, validateCallbackBody, configCtrl.createCallback);
-app.put('/api/callbacks/:id', authRequired, validateCallbackBody, configCtrl.editCallback);
-app.delete('/api/callbacks/:id', authRequired, configCtrl.removeCallback);
+app.get('/api/callbacks', authRequired, asyncHandler(configCtrl.getCallbacks));
+app.get('/api/callbacks/:id', authRequired, asyncHandler(configCtrl.getCallback));
+app.post('/api/callbacks', authRequired, validateCallbackBody, asyncHandler(configCtrl.createCallback));
+app.put('/api/callbacks/:id', authRequired, validateCallbackBody, asyncHandler(configCtrl.editCallback));
+app.delete('/api/callbacks/:id', authRequired, asyncHandler(configCtrl.removeCallback));
 
 // Tag config CRUD
-app.get('/api/tags', authRequired, configCtrl.getTags);
-app.get('/api/tags/:id', authRequired, configCtrl.getTag);
-app.post('/api/tags', authRequired, validateTagBody, configCtrl.createTag);
-app.put('/api/tags/:id', authRequired, validateTagBody, configCtrl.editTag);
-app.delete('/api/tags/:id', authRequired, configCtrl.removeTag);
+app.get('/api/tags', authRequired, asyncHandler(configCtrl.getTags));
+app.get('/api/tags/:id', authRequired, asyncHandler(configCtrl.getTag));
+app.post('/api/tags', authRequired, validateTagBody, asyncHandler(configCtrl.createTag));
+app.put('/api/tags/:id', authRequired, validateTagBody, asyncHandler(configCtrl.editTag));
+app.delete('/api/tags/:id', authRequired, asyncHandler(configCtrl.removeTag));
 
 // Logs
-app.get('/api/logs', authRequired, configCtrl.getLogs);
+app.get('/api/logs', authRequired, asyncHandler(configCtrl.getLogs));
 
 // TSign config
-app.get('/api/tsign-config', authRequired, configCtrl.getTSignConfig);
-app.put('/api/tsign-config', authRequired, configCtrl.updateTSignConfig);
+app.get('/api/tsign-config', authRequired, asyncHandler(configCtrl.getTSignConfig));
+app.put('/api/tsign-config', authRequired, asyncHandler(configCtrl.updateTSignConfig));
 
 // Config versions
-app.get('/api/versions/:type', authRequired, configCtrl.getVersions);
-app.post('/api/versions/:type/rollback', authRequired, configCtrl.rollback);
+app.get('/api/versions/:type', authRequired, asyncHandler(configCtrl.getVersions));
+app.post('/api/versions/:type/rollback', authRequired, asyncHandler(configCtrl.rollback));
 
 // ──── Global error handling middleware ────
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {

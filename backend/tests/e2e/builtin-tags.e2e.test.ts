@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
-import axios from 'axios';
 import { createMockReceiver, MockReceiver } from '../helpers/mock-receiver';
 import {
   createTempConfigDir,
@@ -13,9 +12,9 @@ import {
 import { buildEncryptedCallback, buildMockMessage } from '../helpers/crypto-helpers';
 import { generateEncryptKey, generateSignToken } from '../../src/utils/crypto.util';
 
-const DISPATCHER_PORT = 4051;
-const RECEIVER_A_PORT = 4052;
-const RECEIVER_B_PORT = 4053;
+const DISPATCHER_PORT = 14051;
+const RECEIVER_A_PORT = 14052;
+const RECEIVER_B_PORT = 14053;
 
 const ENCRYPT_KEY = generateEncryptKey();
 const TOKEN = generateSignToken();
@@ -43,7 +42,7 @@ describe('E2E: 内置标签 FlowType / UserData 过滤分发', () => {
       { port: DISPATCHER_PORT, encryptKey: ENCRYPT_KEY, token: TOKEN },
       configDir
     );
-  }, 30000);
+  }, 60000);
 
   afterAll(async () => {
     await stopDispatcher(dispatcher);
@@ -56,17 +55,17 @@ describe('E2E: 内置标签 FlowType / UserData 过滤分发', () => {
     receiverA.clearReceived();
     receiverB.clearReceived();
     // 清理所有 callback 配置
-    const res = await axios.get(`${dispatcher.apiBase}/callbacks`);
+    const res = await dispatcher.api.get('/callbacks');
     const allCallbacks = res.data?.data || [];
     for (const cb of allCallbacks) {
-      await axios.delete(`${dispatcher.apiBase}/callbacks/${cb.id}`).catch(() => {});
+      await dispatcher.api.delete(`/callbacks/${cb.id}`).catch(() => {});
     }
   });
 
   // ---- 辅助函数 ----
 
   async function createCallbackConfig(receiverUrl: string, overrides: Record<string, any> = {}) {
-    const res = await axios.post(`${dispatcher.apiBase}/callbacks`, {
+    const res = await dispatcher.api.post('/callbacks', {
       name: `test-${Date.now()}`,
       url: `${receiverUrl}/callback`,
       appType: 'company',
@@ -91,7 +90,7 @@ describe('E2E: 内置标签 FlowType / UserData 过滤分发', () => {
   // ---- 内置标签在启动时自动初始化 ----
 
   async function getTags(): Promise<any[]> {
-    const res = await axios.get(`${dispatcher.apiBase}/tags`);
+    const res = await dispatcher.api.get('/tags');
     // API 返回 { code, message, data: [...tags] }
     return res.data?.data || [];
   }
@@ -117,7 +116,7 @@ describe('E2E: 内置标签 FlowType / UserData 过滤分发', () => {
 
     // 尝试删除
     try {
-      await axios.delete(`${dispatcher.apiBase}/tags/${flowTypeTag.id}`);
+      await dispatcher.api.delete(`/tags/${flowTypeTag.id}`);
       // 如果返回了成功但实际未删除，也算保护成功
       const after = await getTags();
       const stillExists = after.find((t: any) => t.key === 'FlowType' && t.builtIn);

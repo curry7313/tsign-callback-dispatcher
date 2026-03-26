@@ -3,13 +3,13 @@ import {
   Tag, Loading, MessagePlugin, Table, Input, Button, Space,
 } from 'tdesign-react';
 import { LockOnIcon, BrowseOffIcon, BrowseIcon, LinkIcon, CloseCircleFilledIcon } from 'tdesign-icons-react';
-import { fetchHealth, fetchLogs, fetchTSignConfig, updateTSignConfig } from '../lib/api';
+import { fetchHealth, fetchLogs, fetchTSignConfig, updateTSignConfig, SystemStatus } from '../lib/api';
 import { OperationLog, TSignConfig } from '../types/api.types';
 
 const CALLBACK_FAQ_URL = 'https://qian.tencent.com/developers/company/callback_types_v2#%E4%BA%94-%E5%9B%9E%E8%B0%83-faq';
 
 const SettingsPage: React.FC = () => {
-  const [health, setHealth] = useState<any>(null);
+  const [health, setHealth] = useState<SystemStatus | null>(null);
   const [logs, setLogs] = useState<OperationLog[]>([]);
   const [logsTotal, setLogsTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -65,7 +65,7 @@ const SettingsPage: React.FC = () => {
       colKey: 'type',
       title: '类型',
       width: 100,
-      cell: ({ row }: any) => (
+      cell: ({ row }: { row: OperationLog }) => (
         <Tag
           theme={row.type === 'dispatch' ? 'primary' : row.type === 'config_change' ? 'warning' : 'default'}
           variant="light"
@@ -81,7 +81,7 @@ const SettingsPage: React.FC = () => {
       colKey: 'timestamp',
       title: '时间',
       width: 180,
-      cell: ({ row }: any) => new Date(row.timestamp).toLocaleString('zh-CN'),
+      cell: ({ row }: { row: OperationLog }) => new Date(row.timestamp).toLocaleString('zh-CN'),
     },
   ];
 

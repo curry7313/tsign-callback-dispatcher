@@ -108,7 +108,7 @@ const TagRuleEditor: React.FC<TagRuleEditorProps> = ({ rules, onChange, availabl
               <Select
                 size="small"
                 value={rule.operator}
-                onChange={(val) => updateRule(index, { operator: val as any })}
+                onChange={(val) => updateRule(index, { operator: val as TagMatchRule['operator'] })}
                 options={OPERATOR_OPTIONS}
                 style={{ width: '100%' }}
               />

@@ -1,13 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import axios from 'axios';
 import {
   createTempConfigDir,
   startDispatcher,
   stopDispatcher,
   cleanupDir,
   sendCallback,
-  getReceivedCallbacks,
-  clearReceivedCallbacks,
   waitMs,
   DispatcherInstance,
 } from '../helpers/test-utils';
@@ -16,22 +13,22 @@ import { createMockReceiver, MockReceiver } from '../helpers/mock-receiver';
 import { generateEncryptKey, generateSignToken } from '../../src/utils/crypto.util';
 
 // Instance A: main dispatcher
-const PORT_A = 5001;
+const PORT_A = 15001;
 const KEY_A = generateEncryptKey();
 const TOKEN_A = generateSignToken();
 
 // Instance B: receiver 1
-const PORT_B = 5002;
+const PORT_B = 15002;
 const KEY_B = generateEncryptKey();
 const TOKEN_B = generateSignToken();
 
 // Instance C: receiver 2
-const PORT_C = 5003;
+const PORT_C = 15003;
 const KEY_C = generateEncryptKey();
 const TOKEN_C = generateSignToken();
 
 // Mock receiver for plaintext test
-const PORT_MOCK = 5004;
+const PORT_MOCK = 15004;
 
 let instanceA: DispatcherInstance;
 let instanceB: DispatcherInstance;
@@ -134,8 +131,8 @@ describe('集成测试: 多实例分发链路', () => {
   }, 15000);
 
   it('1. 回调消息加密分发到 B 和 C，两者均成功解密', async () => {
-    await clearReceivedCallbacks(PORT_B);
-    await clearReceivedCallbacks(PORT_C);
+    await instanceB.api.delete('/received-callbacks');
+    await instanceC.api.delete('/received-callbacks');
 
     const msg = buildMockMessage('FlowStatusChange', { FlowId: 'integration-test-1' });
     const req = buildEncryptedCallback(msg, KEY_A, TOKEN_A);
@@ -144,8 +141,10 @@ describe('集成测试: 多实例分发链路', () => {
     // Wait for async dispatch chain
     await waitMs(3000);
 
-    const receivedB = await getReceivedCallbacks(PORT_B);
-    const receivedC = await getReceivedCallbacks(PORT_C);
+    const resB = await instanceB.api.get('/received-callbacks');
+    const resC = await instanceC.api.get('/received-callbacks');
+    const receivedB = resB.data?.data || [];
+    const receivedC = resC.data?.data || [];
 
     expect(receivedB.length).toBeGreaterThanOrEqual(1);
     expect(receivedC.length).toBeGreaterThanOrEqual(1);
@@ -158,11 +157,11 @@ describe('集成测试: 多实例分发链路', () => {
   });
 
   it('2. 禁用 B 后仅 C 收到消息', async () => {
-    await clearReceivedCallbacks(PORT_B);
-    await clearReceivedCallbacks(PORT_C);
+    await instanceB.api.delete('/received-callbacks');
+    await instanceC.api.delete('/received-callbacks');
 
     // Disable B in A's config
-    await axios.put(`${instanceA.apiBase}/callbacks/cb-to-b`, { enabled: false });
+    await instanceA.api.put('/callbacks/cb-to-b', { enabled: false });
     await waitMs(300);
 
     const msg = buildMockMessage('FlowStatusChange', { FlowId: 'integration-test-2' });
@@ -171,24 +170,26 @@ describe('集成测试: 多实例分发链路', () => {
 
     await waitMs(3000);
 
-    const receivedB = await getReceivedCallbacks(PORT_B);
-    const receivedC = await getReceivedCallbacks(PORT_C);
+    const resB = await instanceB.api.get('/received-callbacks');
+    const resC = await instanceC.api.get('/received-callbacks');
+    const receivedB = resB.data?.data || [];
+    const receivedC = resC.data?.data || [];
 
     expect(receivedB.length).toBe(0);
     expect(receivedC.length).toBeGreaterThanOrEqual(1);
     expect(receivedC[0].message.MsgData.FlowId).toBe('integration-test-2');
 
     // Re-enable B for subsequent tests
-    await axios.put(`${instanceA.apiBase}/callbacks/cb-to-b`, { enabled: true });
+    await instanceA.api.put('/callbacks/cb-to-b', { enabled: true });
     await waitMs(300);
   });
 
   it('3. 事件类型过滤：B 只接收 FlowStatusChange，C 接收全部', async () => {
-    await clearReceivedCallbacks(PORT_B);
-    await clearReceivedCallbacks(PORT_C);
+    await instanceB.api.delete('/received-callbacks');
+    await instanceC.api.delete('/received-callbacks');
 
     // Set B to only accept FlowStatusChange
-    await axios.put(`${instanceA.apiBase}/callbacks/cb-to-b`, {
+    await instanceA.api.put('/callbacks/cb-to-b', {
       msgTypes: ['FlowStatusChange'],
     });
     await waitMs(300);
@@ -200,14 +201,16 @@ describe('集成测试: 多实例分发链路', () => {
 
     await waitMs(3000);
 
-    let receivedB = await getReceivedCallbacks(PORT_B);
-    let receivedC = await getReceivedCallbacks(PORT_C);
+    let resB = await instanceB.api.get('/received-callbacks');
+    let resC = await instanceC.api.get('/received-callbacks');
+    let receivedB = resB.data?.data || [];
+    let receivedC = resC.data?.data || [];
 
     expect(receivedB.length).toBe(0);
     expect(receivedC.length).toBeGreaterThanOrEqual(1);
 
-    await clearReceivedCallbacks(PORT_B);
-    await clearReceivedCallbacks(PORT_C);
+    await instanceB.api.delete('/received-callbacks');
+    await instanceC.api.delete('/received-callbacks');
 
     // Send FlowStatusChange event
     const msg2 = buildMockMessage('FlowStatusChange', { FlowId: 'integration-test-3-status' });
@@ -216,15 +219,17 @@ describe('集成测试: 多实例分发链路', () => {
 
     await waitMs(3000);
 
-    receivedB = await getReceivedCallbacks(PORT_B);
-    receivedC = await getReceivedCallbacks(PORT_C);
+    resB = await instanceB.api.get('/received-callbacks');
+    resC = await instanceC.api.get('/received-callbacks');
+    receivedB = resB.data?.data || [];
+    receivedC = resC.data?.data || [];
 
     expect(receivedB.length).toBeGreaterThanOrEqual(1);
     expect(receivedC.length).toBeGreaterThanOrEqual(1);
     expect(receivedB[0].message.MsgType).toBe('FlowStatusChange');
 
     // Reset B to accept all events
-    await axios.put(`${instanceA.apiBase}/callbacks/cb-to-b`, { msgTypes: [] });
+    await instanceA.api.put('/callbacks/cb-to-b', { msgTypes: [] });
     await waitMs(300);
   });
 
@@ -232,7 +237,7 @@ describe('集成测试: 多实例分发链路', () => {
     mockReceiver.clearReceived();
 
     // Add a plaintext callback config to A pointing to mock receiver
-    const createRes = await axios.post(`${instanceA.apiBase}/callbacks`, {
+    const createRes = await instanceA.api.post('/callbacks', {
       name: '明文分发到MockReceiver',
       url: `${mockReceiver.url}/callback`,
       appType: 'company',
@@ -263,6 +268,6 @@ describe('集成测试: 多实例分发链路', () => {
     expect(received[0].body.encrypt).toBeUndefined();
 
     // Cleanup
-    await axios.delete(`${instanceA.apiBase}/callbacks/${plainConfig.id}`);
+    await instanceA.api.delete(`/callbacks/${plainConfig.id}`);
   });
 });
