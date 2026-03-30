@@ -150,7 +150,9 @@ cp k8s/secret.yaml.example k8s/secret.yaml
 # 编辑 k8s/configmap.yaml，填写 tsign.encryptKey 和 tsign.token，http://{you-domain}/settings也在界面直接配置
 
 # 3. 配置域名
-# 编辑 k8s/ingress.yaml，替换 host 为你的实际域名。如果需要 HTTPS，还需配置 TLS 证书。可参考tls.yaml
+# 编辑 k8s/ingress.yaml，替换 host 为你的实际域名。如果需要 HTTPS，且网关没有托管证书，还需配置 TLS 证书。可参考tls.yaml
+# 可以使用以下命令生成证书secret
+kubectl create secret tls  --cert=cert.pem   --key=cert.key  --namespace=tsign --dry-run=client  -o yaml > tls.yaml
 
 # 4. （可选）如使用私有镜像仓库，修改 Deployment 中的 image 字段
 # 默认使用 latest 标签，开箱即用

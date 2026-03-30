@@ -1,0 +1,10 @@
+apiVersion: v1
+data:
+# IMPORTANT: Replace placeholder values with your actual secrets before applying!
+  tls.crt: "xxxx"
+  tls.key: "xxxxxxxggg"
+kind: Secret
+metadata:
+ name: tsign-tls
+  namespace: default
+type: kubernetes.io/tls
