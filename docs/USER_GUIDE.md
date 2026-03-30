@@ -61,7 +61,7 @@
 
 在浏览器中访问系统地址（如 `http://your-server:3000`），首先进入登录页面。
 
-![登录页面](./login-page.png)
+<img src="./login-page.png" alt="登录页面" width="600" />
 
 **登录步骤：**
 
@@ -79,9 +79,9 @@
 
 回调配置管理是系统的核心功能页面，在此可以创建和管理所有的回调分发目标。
 
-![回调配置管理页面](./callback-page.png)
+<img src="./callback-page.png" alt="回调配置管理页面" width="600" />
 
-![回调配置页面](./callback-setting.png)
+<img src="./callback-setting.png" alt="回调配置页面" width="600" />
 
 ### 3.1 查看回调列表
 
@@ -184,7 +184,7 @@
 
 点击左侧导航栏的 **「标签管理」** 进入标签管理页面。
 
-![标签管理页面](./tag-page.png)
+<img src="./tag-page.png" alt="标签管理页面" width="600" />
 
 ### 4.1 什么是标签？
 
@@ -248,7 +248,7 @@
 
 点击左侧导航栏的 **「分发记录」** 进入分发记录页面，查看系统接收和分发回调消息的历史记录。
 
-![分发记录页面](./dispatch-records.png)
+<img src="./dispatch-records.png" alt="分发记录页面" width="600" />
 
 ### 5.1 分发概览
 
@@ -319,7 +319,7 @@
 
 点击左侧导航栏的 **「系统设置」** 进入设置页面。
 
-![系统设置页面](./setting-page.png)
+<img src="./setting-page.png" alt="系统设置页面" width="600" />
 
 ### 6.1 腾讯电子签对接配置
 
@@ -339,7 +339,7 @@
 5. 在本系统的「系统设置」页面填入对应值并保存
 
 > ⚠️ **重要**：修改加密密钥或令牌后，需确保与腾讯电子签开放平台中的配置一致，否则会导致回调消息解密或签名验证失败。
-![配置错误](./config-error.png)
+<img src="./config-error.png" alt="配置错误" width="600" />
 
 ### 6.2 操作日志
 
