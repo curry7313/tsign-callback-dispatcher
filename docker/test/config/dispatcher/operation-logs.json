@@ -1,37 +1,10 @@
 [
   {
-    "id": "9568db7b-d256-4bcc-ac7f-7276494aced0",
+    "id": "f8b59a49-be38-43b5-ae53-520b9c78a5e5",
     "type": "config_change",
     "action": "update_callback",
     "detail": "Updated callback \"下游服务C\"",
-    "timestamp": "2026-03-02T08:02:28.463Z"
-  },
-  {
-    "id": "8cc4f2ef-0dd1-4c4d-b4de-d19ceb96869d",
-    "type": "dispatch",
-    "action": "dispatch",
-    "detail": "[SUCCESS] 下游服务B (http://receiver-b:3001/api/callback) - MsgType: ContractDiffTaskCreate, MsgId: yD3fbUUckpm8oiydUygNPbJBh96JnBlM",
-    "timestamp": "2026-02-28T10:56:03.513Z"
-  },
-  {
-    "id": "42cea6b9-9d27-477e-88a6-17883f59890a",
-    "type": "config_change",
-    "action": "update_callback",
-    "detail": "Updated callback \"下游服务C\"",
-    "timestamp": "2026-02-28T10:55:59.925Z"
-  },
-  {
-    "id": "6c1ea828-324c-4f5f-abba-dda4fc0ab988",
-    "type": "dispatch",
-    "action": "dispatch",
-    "detail": "[SUCCESS] 下游服务C (http://receiver-c:3001/api/callback) - MsgType: ContractDiffTaskCreate, MsgId: yD3fbUUckpm8oiydUygNPbJBh96JnBlM",
-    "timestamp": "2026-02-28T10:55:30.714Z"
-  },
-  {
-    "id": "2ba954e3-01df-4c1f-936a-08b7fb6792b8",
-    "type": "dispatch",
-    "action": "dispatch",
-    "detail": "[SUCCESS] 下游服务B (http://receiver-b:3001/api/callback) - MsgType: ContractDiffTaskCreate, MsgId: yD3fbUUckpm8oiydUygNPbJBh96JnBlM",
-    "timestamp": "2026-02-28T10:55:30.712Z"
+    "timestamp": "2026-03-30T13:45:28.518Z",
+    "operator": "admin"
   }
 ]

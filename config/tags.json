@@ -1,6 +1,6 @@
 {
-  "version": 7,
-  "updatedAt": "2026-02-28T08:09:56.947Z",
+  "version": 8,
+  "updatedAt": "2026-03-30T12:54:23.876Z",
   "tags": [
     {
       "name": "自定义数据",
@@ -25,6 +25,16 @@
       "id": "d16d9f30-f598-4f39-a3e9-6998c047223e",
       "createdAt": "2026-02-28T08:08:01.215Z",
       "updatedAt": "2026-02-28T08:08:01.215Z"
+    },
+    {
+      "name": "name",
+      "key": "MsgData.FlowName",
+      "type": "text",
+      "color": "#34d399",
+      "description": "",
+      "id": "469a4a01-31b6-4e42-9971-59f8bfde9812",
+      "createdAt": "2026-03-30T12:54:23.876Z",
+      "updatedAt": "2026-03-30T12:54:23.876Z"
     }
   ]
 }

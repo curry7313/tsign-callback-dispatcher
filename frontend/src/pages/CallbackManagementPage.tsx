@@ -544,8 +544,8 @@ const CallbackManagementPage: React.FC = () => {
               <a
                 href={
                   formData.appType === 'partner'
-                    ? 'https://qian.tencent.com/developers/partner/callback_url'
-                    : 'https://qian.tencent.com/developers/company/callback_url'
+                    ? 'https://qian.tencent.com/developers/partner/callbacks'
+                    : 'https://qian.tencent.com/developers/company/callbacks'
                 }
                 target="_blank"
                 rel="noreferrer"

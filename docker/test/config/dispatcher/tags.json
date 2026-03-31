@@ -1,6 +1,6 @@
 {
-  "version": 6,
-  "updatedAt": "2026-02-28T09:16:41.284Z",
+  "version": 8,
+  "updatedAt": "2026-03-30T13:23:22.277Z",
   "tags": [
     {
       "name": "自定义数据",
@@ -25,6 +25,28 @@
       "id": "4fbda8e6-06cf-4f7e-b2b4-c887b1337f6b",
       "createdAt": "2026-02-28T08:34:49.771Z",
       "updatedAt": "2026-02-28T08:34:49.771Z"
+    },
+    {
+      "name": "合同名称",
+      "key": "MsgData.FlowName",
+      "type": "text",
+      "color": "#fbbf24",
+      "description": "",
+      "id": "9d7c3aff-04a8-4fa5-bd5c-78d640ce51ec",
+      "createdAt": "2026-03-30T13:20:37.155Z",
+      "updatedAt": "2026-03-30T13:20:37.155Z"
+    },
+    {
+      "name": "合同状态过滤",
+      "key": "MsgData.FlowCallbackStatus",
+      "type": "text",
+      "color": "#f87171",
+      "description": "",
+      "builtIn": true,
+      "fieldPath": "MsgData.FlowCallbackStatus",
+      "id": "db91245c-885b-40ef-a793-55932ca9bca1",
+      "createdAt": "2026-03-30T13:23:22.277Z",
+      "updatedAt": "2026-03-30T13:23:22.277Z"
     }
   ]
 }

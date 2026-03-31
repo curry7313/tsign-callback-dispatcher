@@ -1,7 +1,7 @@
 import { TSignCallbackMessage } from '../types/callback.types';
 import { DispatchConfig, DispatchResult } from '../types/config.types';
 import { getCallbacksConfig } from './config.service';
-import { shouldDispatch } from './tag-matcher.service';
+import { shouldDispatch, DispatchDecision } from './tag-matcher.service';
 import { httpPostWithRetry } from '../utils/http.util';
 import { encryptAES256CBC, generateSignature, generateId } from '../utils/crypto.util';
 import { getAppConfig } from '../config/app.config';
@@ -37,7 +37,7 @@ function buildDispatchPayload(message: TSignCallbackMessage, callbackConfig: Dis
 async function safeCheckShouldDispatch(
   message: TSignCallbackMessage,
   callbackConfig: DispatchConfig
-): Promise<boolean> {
+): Promise<DispatchDecision> {
   try {
     return await shouldDispatch(message, callbackConfig);
   } catch (err) {
@@ -46,23 +46,41 @@ async function safeCheckShouldDispatch(
       `[Dispatch] Tag matching error for "${callbackConfig.name}", skipping target. MsgId=${message.MsgId} error=${errMsg}`
     );
     // tag-matcher 异常时跳过此 target，不影响其他 target
-    return false;
+    return { dispatch: false, skipReason: `标签匹配异常: ${errMsg}` };
   }
+}
+
+/** 被跳过（未匹配）的目标信息 */
+export interface SkippedTarget {
+  configId: string;
+  configName: string;
+  url: string;
+  reason: string;
 }
 
 /**
  * 安全分发到单个 target，完全隔离异常，确保不影响其他 target
+ * 返回 { result, skipped }：如果分发了则 result 有值，如果跳过了则 skipped 有值
  */
 async function dispatchToTarget(
   message: TSignCallbackMessage,
   callbackConfig: DispatchConfig,
   appCfg: ReturnType<typeof getAppConfig>
-): Promise<DispatchResult | null> {
+): Promise<{ result: DispatchResult | null; skipped: SkippedTarget | null }> {
   try {
     // Step 1: 标签匹配检查
-    if (!(await safeCheckShouldDispatch(message, callbackConfig))) {
-      logger.debug(`Skipping "${callbackConfig.name}": tag/type not matched`);
-      return null;
+    const decision = await safeCheckShouldDispatch(message, callbackConfig);
+    if (!decision.dispatch) {
+      logger.debug(`Skipping "${callbackConfig.name}": ${decision.skipReason || 'tag/type not matched'}`);
+      return {
+        result: null,
+        skipped: {
+          configId: callbackConfig.id,
+          configName: callbackConfig.name,
+          url: callbackConfig.url,
+          reason: decision.skipReason || '标签/类型不匹配',
+        },
+      };
     }
 
     // Step 2: 构建 payload
@@ -105,7 +123,7 @@ async function dispatchToTarget(
         (result.error ? ` error="${result.error}"` : '')
     );
 
-    return dispatchResult;
+    return { result: dispatchResult, skipped: null };
   } catch (err) {
     // 兜底：即使上面所有逻辑出了未预期异常，也不会影响其他 target
     const errMsg = err instanceof Error ? err.message : String(err);
@@ -114,14 +132,17 @@ async function dispatchToTarget(
         `MsgType=${message.MsgType} MsgId=${message.MsgId} error="${errMsg}"`
     );
     return {
-      configId: callbackConfig.id,
-      configName: callbackConfig.name,
-      url: callbackConfig.url,
-      success: false,
-      error: `Unhandled exception: ${errMsg}`,
-      retryCount: 0,
-      timestamp: Date.now(),
-      duration: 0,
+      result: {
+        configId: callbackConfig.id,
+        configName: callbackConfig.name,
+        url: callbackConfig.url,
+        success: false,
+        error: `Unhandled exception: ${errMsg}`,
+        retryCount: 0,
+        timestamp: Date.now(),
+        duration: 0,
+      },
+      skipped: null,
     };
   }
 }
@@ -147,12 +168,14 @@ export async function dispatchMessage(message: TSignCallbackMessage): Promise<Di
       successCount: 0,
       failCount: 0,
       results: [],
+      skippedTargets: [],
       error: `Config load failed: ${errMsg}`,
     });
     return [];
   }
 
   const results: DispatchResult[] = [];
+  const skippedTargets: SkippedTarget[] = [];
   const enabledCallbacks = config.callbacks.filter((c) => c.enabled);
 
   logger.info(
@@ -171,6 +194,7 @@ export async function dispatchMessage(message: TSignCallbackMessage): Promise<Di
       successCount: 0,
       failCount: 0,
       results: [],
+      skippedTargets: [],
     });
     return [];
   }
@@ -188,8 +212,13 @@ export async function dispatchMessage(message: TSignCallbackMessage): Promise<Di
     const settled = settledResults[i];
     const callbackConfig = enabledCallbacks[i];
 
-    if (settled.status === 'fulfilled' && settled.value) {
-      results.push(settled.value);
+    if (settled.status === 'fulfilled') {
+      if (settled.value.result) {
+        results.push(settled.value.result);
+      }
+      if (settled.value.skipped) {
+        skippedTargets.push(settled.value.skipped);
+      }
     } else if (settled.status === 'rejected') {
       // Promise.allSettled 被 reject 的情况（理论上不会发生，因为 dispatchToTarget 内部已 try-catch）
       const errMsg = settled.reason instanceof Error ? settled.reason.message : String(settled.reason);
@@ -238,9 +267,11 @@ export async function dispatchMessage(message: TSignCallbackMessage): Promise<Di
       success: r.success,
       statusCode: r.statusCode,
       error: r.error,
+      errorType: r.errorType,
       retryCount: r.retryCount,
       duration: r.duration,
     })),
+    skippedTargets,
   });
 
   return results;

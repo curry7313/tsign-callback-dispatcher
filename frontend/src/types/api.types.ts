@@ -92,6 +92,13 @@ export interface DispatchRecord {
     retryCount: number;
     duration?: number;
   }>;
+  /** 被跳过（未匹配）的目标及跳过原因 */
+  skippedTargets?: Array<{
+    configId: string;
+    configName: string;
+    url: string;
+    reason: string;
+  }>;
 }
 
 /** 分发统计摘要 */

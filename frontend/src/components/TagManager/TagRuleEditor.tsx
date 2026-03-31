@@ -2,6 +2,7 @@ import React from 'react';
 import { Button, Input, Select, Tag, Switch, Space } from 'tdesign-react';
 import { AddIcon, DeleteIcon } from 'tdesign-icons-react';
 import { TagMatchRule, TagDefinition } from '../../types/api.types';
+import { COMMON_FIELDS } from '../../constants/fields';
 
 interface TagRuleEditorProps {
   rules: TagMatchRule[];
@@ -15,18 +16,6 @@ const OPERATOR_OPTIONS = [
   { label: '正则匹配', value: 'regex' },
   { label: '枚举匹配', value: 'in' },
   { label: '字段存在', value: 'exists' },
-];
-
-const COMMON_FIELDS = [
-  { label: '消息类型 (MsgType)', value: 'MsgType' },
-  { label: '合同ID (MsgData.FlowId)', value: 'MsgData.FlowId' },
-  { label: '合同名称 (MsgData.FlowName)', value: 'MsgData.FlowName' },
-  { label: '操作类型 (MsgData.Operate)', value: 'MsgData.Operate' },
-  { label: '合同状态 (MsgData.FlowCallbackStatus)', value: 'MsgData.FlowCallbackStatus' },
-  { label: '印章名称 (MsgData.SealName)', value: 'MsgData.SealName' },
-  { label: '模板名称 (MsgData.TemplateName)', value: 'MsgData.TemplateName' },
-  { label: '组织ID (MsgData.OrganizationId)', value: 'MsgData.OrganizationId' },
-  { label: '用户数据 (MsgData.UserData)', value: 'MsgData.UserData' },
 ];
 
 const TagRuleEditor: React.FC<TagRuleEditorProps> = ({ rules, onChange, availableTags }) => {

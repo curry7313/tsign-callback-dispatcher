@@ -41,8 +41,8 @@ export function validateTagBody(req: Request, res: Response, next: NextFunction)
   }
   if (!key || typeof key !== 'string' || key.trim().length === 0) {
     errors.push('key is required');
-  } else if (!/^[a-zA-Z0-9_]+$/.test(key)) {
-    errors.push('key must only contain letters, numbers, and underscores');
+  } else if (!/^[a-zA-Z0-9_.]+$/.test(key)) {
+    errors.push('key must only contain letters, numbers, underscores, and dots');
   }
   if (type && !['text', 'select'].includes(type)) {
     errors.push('type must be "text" or "select"');

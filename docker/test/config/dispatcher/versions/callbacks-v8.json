@@ -1,0 +1,122 @@
+{
+  "version": 8,
+  "timestamp": "2026-03-30T13:23:38.725Z",
+  "changes": "Updated callback: 下游服务C",
+  "data": {
+    "version": 9,
+    "updatedAt": "2026-03-30T13:23:38.717Z",
+    "callbacks": [
+      {
+        "id": "test-receiver-b",
+        "name": "下游服务B",
+        "url": "http://receiver-b:3001/api/callback",
+        "appType": "company",
+        "tags": [
+          {
+            "key": "FlowType",
+            "value": "自建应用集成xxxxx"
+          },
+          {
+            "key": "UserData",
+            "value": "dGVhdC1h"
+          }
+        ],
+        "matchRules": [],
+        "enabled": true,
+        "retryCount": 3,
+        "timeout": 10000,
+        "headers": {},
+        "msgTypes": [
+          "FlowStatusChange",
+          "FlowCost",
+          "ForwardFLow",
+          "CreateFlowReview",
+          "ReceiveFlow",
+          "ApproverDeadlineExpired",
+          "CancelFlows",
+          "DocumentFill",
+          "FlowGroupStatusChange",
+          "ReviewerFlowRead",
+          "OperateSeal",
+          "EmployeeSealAuth",
+          "SealUse",
+          "TemplateUpdate",
+          "TemplateDelete",
+          "TemplateAvailable",
+          "VerifyStaffInfo",
+          "RolesChange",
+          "ApproveEmployeeJoin",
+          "QuiteJob",
+          "SuperAdminChange",
+          "ModifyOrganizationBaseInfo",
+          "CloseOrganization",
+          "SubOrganizationJoinOrganizationGroup",
+          "UnbindOrganizationGroup",
+          "OperateExtendedService",
+          "CreateOrganization",
+          "UserAccountVerify",
+          "UserMobileChange",
+          "OrganizationAuthorization",
+          "OrgAuthorizationFileSubmit",
+          "OrganizationAuthorizationFileReview",
+          "OrgAuthorizationFileInvalid",
+          "UserNameChange",
+          "CreateFlowByQrCode",
+          "MultiFlowSignQrCodeCost",
+          "PartnerServerSignAuthorization",
+          "BillingUse",
+          "OpenUserAutoSign",
+          "AutoSignSealImg",
+          "DisableUserAutoSign",
+          "CancelUserAutoSign",
+          "AIContractReview",
+          "AIInformationExtraction",
+          "ContractDiffTaskFinish",
+          "ContractDiffTaskCreate"
+        ],
+        "unknownMsgTypePolicy": "dispatch",
+        "encryptKey": "BB23FB38AE1D47B09D939CFBAE64195B",
+        "signToken": "test_receiver_b_token_123456",
+        "reEncrypt": true,
+        "remark": "测试下游接收者 B（二次加密）",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "updatedAt": "2026-02-28T09:06:18.446Z"
+      },
+      {
+        "id": "test-receiver-c",
+        "name": "下游服务C",
+        "url": "http://receiver-c:3001/api/callback",
+        "appType": "company",
+        "tags": [
+          {
+            "key": "UserData",
+            "value": "dGVhdC1i"
+          },
+          {
+            "key": "FlowType",
+            "value": "自建应用集成xxxxx"
+          },
+          {
+            "key": "MsgData.FlowCallbackStatus",
+            "value": "DEADLINE",
+            "matchMode": "exact"
+          }
+        ],
+        "matchRules": [],
+        "enabled": true,
+        "retryCount": 3,
+        "timeout": 10000,
+        "headers": {},
+        "msgTypes": [],
+        "unknownMsgTypePolicy": "dispatch",
+        "encryptKey": "CC23FB38AE1D47B09D939CFBAE64195C",
+        "signToken": "test_receiver_c_token_123456",
+        "reEncrypt": true,
+        "remark": "测试下游接收者 C（二次加密）",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "updatedAt": "2026-03-30T13:23:38.717Z",
+        "builtInTagMissPolicy": "dispatch"
+      }
+    ]
+  }
+}

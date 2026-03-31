@@ -130,8 +130,29 @@ function passesMsgTypeFilter(message: TSignCallbackMessage, config: DispatchFilt
 }
 
 /**
- * Check if all built-in tags match the message.
- * Returns true if all built-in tags pass, false if any built-in tag causes discard.
+ * Resolve the field path for a tag.
+ * For built-in tags, use tagDef.fieldPath.
+ * For non-built-in tags whose key contains '.', the key itself is the field path.
+ */
+function resolveFieldPath(
+  configTag: TagValue,
+  tagDef: { builtIn?: boolean; fieldPath?: string } | undefined
+): string | undefined {
+  if (tagDef?.builtIn && tagDef.fieldPath) return tagDef.fieldPath;
+  if (tagDef?.fieldPath) return tagDef.fieldPath;
+  // key itself looks like a nested field path (e.g. "MsgData.FlowCallbackStatus")
+  if (configTag.key.includes('.')) return configTag.key;
+  return undefined;
+}
+
+/**
+ * Check if all tags with a resolvable field path match the message.
+ * Returns true if all such tags pass, false if any causes discard.
+ *
+ * This covers:
+ * - Built-in tags (builtIn: true + fieldPath)
+ * - Custom tags whose key is a nested field path (e.g. "MsgData.xxx")
+ * - Custom tags with an explicit fieldPath
  */
 function passesBuiltInTags(
   message: TSignCallbackMessage,
@@ -141,17 +162,18 @@ function passesBuiltInTags(
 ): boolean {
   for (const configTag of configTags) {
     const tagDef = tagDefMap.get(configTag.key);
-    if (!tagDef?.builtIn || !tagDef.fieldPath) continue;
+    const fieldPath = resolveFieldPath(configTag, tagDef);
+    if (!fieldPath) continue;
 
-    const msgValue = getNestedValue(message as unknown as Record<string, unknown>, tagDef.fieldPath);
+    const msgValue = getNestedValue(message as unknown as Record<string, unknown>, fieldPath);
     const fieldMissing = msgValue === undefined || msgValue === null || String(msgValue).trim() === '';
 
     if (fieldMissing) {
       if (builtInTagMissPolicy === 'discard') {
-        logger.debug(`Built-in tag "${configTag.key}" field missing or empty in message, discarded by policy`);
+        logger.debug(`Tag "${configTag.key}" field "${fieldPath}" missing or empty in message, discarded by policy`);
         return false;
       }
-      logger.debug(`Built-in tag "${configTag.key}" field missing or empty in message, dispatched by policy`);
+      logger.debug(`Tag "${configTag.key}" field "${fieldPath}" missing or empty in message, dispatched by policy`);
       continue;
     }
 
@@ -164,26 +186,40 @@ function passesBuiltInTags(
 
       if (!isMatch) {
         logger.debug(
-          `Built-in tag "${configTag.key}" value mismatch (${matchMode}): expected="${configTag.value}", got="${msgValue}"`
+          `Tag "${configTag.key}" value mismatch (${matchMode}): expected="${configTag.value}", got="${msgValue}"`
         );
         return false;
       }
     }
 
-    logger.debug(`Built-in tag "${configTag.key}" matched: value="${msgValue}"`);
+    logger.debug(`Tag "${configTag.key}" matched: value="${msgValue}"`);
   }
   return true;
+}
+
+/** shouldDispatch 的返回结果 */
+export interface DispatchDecision {
+  /** 是否应该分发 */
+  dispatch: boolean;
+  /** 不分发时的跳过原因（人类可读） */
+  skipReason?: string;
 }
 
 export async function shouldDispatch(
   message: TSignCallbackMessage,
   config: DispatchFilterConfig
-): Promise<boolean> {
+): Promise<DispatchDecision> {
   // Step 1: Message type filter
-  if (!passesMsgTypeFilter(message, config)) return false;
+  if (!passesMsgTypeFilter(message, config)) {
+    const isKnown = ALL_KNOWN_MSG_TYPES.has(message.MsgType);
+    const reason = isKnown
+      ? `消息类型 "${message.MsgType}" 不在该目标的允许类型列表中`
+      : `未知消息类型 "${message.MsgType}"，策略为丢弃`;
+    return { dispatch: false, skipReason: reason };
+  }
 
   // Step 2: If no tags configured, dispatch all
-  if (config.tags.length === 0 && config.matchRules.length === 0) return true;
+  if (config.tags.length === 0 && config.matchRules.length === 0) return { dispatch: true };
 
   // Step 3: Built-in tag matching
   const tagsConfig = await getTagsConfig();
@@ -191,24 +227,73 @@ export async function shouldDispatch(
   const missPolicy = config.builtInTagMissPolicy || 'dispatch';
 
   if (config.tags.length > 0) {
-    if (!passesBuiltInTags(message, config.tags, tagDefMap, missPolicy)) return false;
+    if (!passesBuiltInTags(message, config.tags, tagDefMap, missPolicy)) {
+      // 找出具体是哪个内置标签不匹配
+      const mismatchDetails = getBuiltInMismatchDetail(message, config.tags, tagDefMap, missPolicy);
+      return { dispatch: false, skipReason: mismatchDetails };
+    }
   }
 
   // Step 4: Match tags from rules
   const messageTags = matchTags(message, config.matchRules);
 
   // If only built-in tags (no matchRules), all built-in passed → dispatch
-  if (config.matchRules.length === 0) return true;
+  if (config.matchRules.length === 0) return { dispatch: true };
 
   // If no tags configured, any matched rule tag is sufficient
-  if (config.tags.length === 0) return messageTags.length > 0;
+  if (config.tags.length === 0) {
+    if (messageTags.length > 0) return { dispatch: true };
+    return { dispatch: false, skipReason: '自定义规则均未匹配到消息中的字段值' };
+  }
 
   // Step 5: Non-built-in tags must match via matchRules
   const nonBuiltInTagKeys = config.tags
     .filter((t) => !tagDefMap.get(t.key)?.builtIn)
     .map((t) => t.key);
 
-  if (nonBuiltInTagKeys.length === 0) return true;
+  if (nonBuiltInTagKeys.length === 0) return { dispatch: true };
 
-  return nonBuiltInTagKeys.some((key) => messageTags.includes(key));
+  const matched = nonBuiltInTagKeys.some((key) => messageTags.includes(key));
+  if (matched) return { dispatch: true };
+
+  return {
+    dispatch: false,
+    skipReason: `标签 [${nonBuiltInTagKeys.join(', ')}] 未匹配（消息提取到的标签: [${messageTags.join(', ') || '无'}]）`,
+  };
+}
+
+/**
+ * 生成标签不匹配的具体描述
+ */
+function getBuiltInMismatchDetail(
+  message: TSignCallbackMessage,
+  configTags: TagValue[],
+  tagDefMap: Map<string, { builtIn?: boolean; fieldPath?: string }>,
+  builtInTagMissPolicy: BuiltInTagMissPolicy
+): string {
+  for (const configTag of configTags) {
+    const tagDef = tagDefMap.get(configTag.key);
+    const fieldPath = resolveFieldPath(configTag, tagDef);
+    if (!fieldPath) continue;
+
+    const msgValue = getNestedValue(message as unknown as Record<string, unknown>, fieldPath);
+    const fieldMissing = msgValue === undefined || msgValue === null || String(msgValue).trim() === '';
+
+    if (fieldMissing && builtInTagMissPolicy === 'discard') {
+      return `标签 "${configTag.key}" 对应字段 "${fieldPath}" 在消息中为空/缺失，策略为丢弃`;
+    }
+
+    if (!fieldMissing && configTag.value) {
+      const strMsgValue = String(msgValue);
+      const matchMode = configTag.matchMode || 'exact';
+      const isMatch = matchMode === 'prefix'
+        ? strMsgValue.startsWith(configTag.value)
+        : strMsgValue === configTag.value;
+
+      if (!isMatch) {
+        return `标签 "${configTag.key}"（${matchMode === 'prefix' ? '前缀' : '精确'}匹配）不匹配：期望 "${configTag.value}"，实际 "${strMsgValue}"`;
+      }
+    }
+  }
+  return '标签不匹配';
 }

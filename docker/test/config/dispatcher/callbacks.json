@@ -1,6 +1,6 @@
 {
-  "version": 8,
-  "updatedAt": "2026-03-02T08:02:28.457Z",
+  "version": 11,
+  "updatedAt": "2026-03-30T13:45:28.515Z",
   "callbacks": [
     {
       "id": "test-receiver-b",
@@ -85,12 +85,9 @@
       "appType": "company",
       "tags": [
         {
-          "key": "UserData",
-          "value": "dGVhdC1i"
-        },
-        {
-          "key": "FlowType",
-          "value": "自建应用集成xxxxx"
+          "key": "MsgData.FlowCallbackStatus",
+          "value": "DEADLINE",
+          "matchMode": "exact"
         }
       ],
       "matchRules": [],
@@ -105,7 +102,7 @@
       "reEncrypt": true,
       "remark": "测试下游接收者 C（二次加密）",
       "createdAt": "2026-01-01T00:00:00.000Z",
-      "updatedAt": "2026-03-02T08:02:28.457Z",
+      "updatedAt": "2026-03-30T13:45:28.515Z",
       "builtInTagMissPolicy": "dispatch"
     }
   ]

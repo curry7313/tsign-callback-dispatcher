@@ -5,6 +5,7 @@ import {
 import { AddIcon, EditIcon, DeleteIcon, TagIcon } from 'tdesign-icons-react';
 import { fetchTags, createTag, updateTag, deleteTag } from '../lib/api';
 import { TagDefinition } from '../types/api.types';
+import { COMMON_FIELDS } from '../constants/fields';
 
 const TAG_TYPE_OPTIONS = [
   { label: '文本输入', value: 'text' },
@@ -77,11 +78,7 @@ const TagManagementPage: React.FC = () => {
       return;
     }
     if (!formData.key.trim()) {
-      MessagePlugin.warning('请输入标签键');
-      return;
-    }
-    if (!/^[a-zA-Z0-9_]+$/.test(formData.key)) {
-      MessagePlugin.warning('标签键只能包含字母、数字和下划线');
+      MessagePlugin.warning('请选择标签键');
       return;
     }
     if (formData.type === 'select' && formData.options.length === 0) {
@@ -321,14 +318,17 @@ const TagManagementPage: React.FC = () => {
               <span className="text-red-400 mr-1">*</span>标签键
             </label>
             <div className="flex-1">
-              <Input
-                value={formData.key}
+              <Select
+                value={formData.key || undefined}
                 onChange={(val) => setFormData({ ...formData, key: String(val) })}
-                placeholder="请输入标签键，如：project_name"
+                placeholder="请选择标签键"
+                options={COMMON_FIELDS}
                 disabled={editingTag?.builtIn}
+                filterable
+                style={{ width: '100%' }}
               />
               <div className="text-xs text-slate-500 mt-1">
-                {editingTag?.builtIn ? '内置标签键不可修改' : '只能包含字母、数字和下划线'}
+                {editingTag?.builtIn ? '内置标签键不可修改' : '标签键对应回调消息中的字段路径'}
               </div>
             </div>
           </div>

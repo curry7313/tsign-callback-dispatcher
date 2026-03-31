@@ -112,7 +112,7 @@
 
 ```bash
 # 克隆项目并进入目录
-git clone <your-repo-url> && cd tsign-callback-dispatcher
+git clone https://github.com/tencentess/tsign-callback-dispatcher.git && cd tsign-callback-dispatcher
 
 # 配置安全凭据
 cat > docker/.env << 'EOF'

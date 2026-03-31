@@ -197,63 +197,104 @@ const DispatchHistoryPage: React.FC = () => {
 
   /** 展开行：显示每个 target 的分发结果 */
   const renderExpandedRow = (record: DispatchRecord) => {
-    if (!record.results || record.results.length === 0) {
+    const hasResults = record.results && record.results.length > 0;
+    const hasSkipped = record.skippedTargets && record.skippedTargets.length > 0;
+
+    if (!hasResults && !hasSkipped) {
       return (
         <div className="px-6 py-3 text-sm text-slate-500">
-          {record.error ? `系统错误: ${record.error}` : '无分发目标'}
+          {record.error ? `系统错误: ${record.error}` : '无分发目标（没有启用的回调配置）'}
         </div>
       );
     }
 
     return (
       <div className="px-8 py-3 ml-8" style={{ color: '#cbd5e1' }}>
-        <div className="text-xs font-medium mb-2 uppercase tracking-wider" style={{ color: 'rgba(56, 189, 248, 0.7)' }}>下游服务分发详情</div>
-        <table className="w-full text-sm" style={{ color: '#cbd5e1' }}>
-          <thead>
-            <tr className="text-xs">
-              <th className="text-left py-1.5 pr-3 font-medium" style={{ color: '#94a3b8' }}>目标名称</th>
-              <th className="text-left py-1.5 pr-3 font-medium" style={{ color: '#94a3b8' }}>URL</th>
-              <th className="text-left py-1.5 pr-3 font-medium" style={{ color: '#94a3b8' }}>状态</th>
-              <th className="text-left py-1.5 pr-3 font-medium" style={{ color: '#94a3b8' }}>HTTP 状态码</th>
-              <th className="text-left py-1.5 pr-3 font-medium" style={{ color: '#94a3b8' }}>耗时</th>
-              <th className="text-left py-1.5 pr-3 font-medium" style={{ color: '#94a3b8' }}>重试</th>
-              <th className="text-left py-1.5 font-medium" style={{ color: '#94a3b8' }}>错误</th>
-            </tr>
-          </thead>
-          <tbody>
-            {record.results.map((r, idx) => (
-              <tr key={idx} className="border-t border-white/5">
-                <td className="py-2 pr-3 text-slate-300 font-medium">{r.configName}</td>
-                <td className="py-2 pr-3">
-                  <Tooltip content={r.url}>
-                    <span className="font-mono text-xs text-slate-400 max-w-[200px] truncate block">{r.url}</span>
-                  </Tooltip>
-                </td>
-                <td className="py-2 pr-3">
-                  {r.success ? (
-                    <Tag theme="success" variant="light" size="small">成功</Tag>
-                  ) : (
-                    <Tag theme="danger" variant="light" size="small">
-                      {r.errorType ? (ERROR_TYPE_LABELS[r.errorType]?.label || r.errorType) : '失败'}
-                    </Tag>
-                  )}
-                </td>
-                <td className="py-2 pr-3 font-mono text-xs text-slate-400">{r.statusCode || '-'}</td>
-                <td className="py-2 pr-3 font-mono text-xs text-slate-400">{formatDuration(r.duration)}</td>
-                <td className="py-2 pr-3 font-mono text-xs text-slate-400">{r.retryCount}</td>
-                <td className="py-2">
-                  {r.error ? (
-                    <Tooltip content={r.error}>
-                      <span className="text-xs text-red-400 max-w-[200px] truncate block cursor-default">{r.error}</span>
-                    </Tooltip>
-                  ) : (
-                    <span className="text-slate-600">-</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {/* 已分发的目标 */}
+        {hasResults && (
+          <>
+            <div className="text-xs font-medium mb-2 uppercase tracking-wider" style={{ color: 'rgba(56, 189, 248, 0.7)' }}>下游服务分发详情</div>
+            <table className="w-full text-sm" style={{ color: '#cbd5e1' }}>
+              <thead>
+                <tr className="text-xs">
+                  <th className="text-left py-1.5 pr-3 font-medium" style={{ color: '#94a3b8' }}>目标名称</th>
+                  <th className="text-left py-1.5 pr-3 font-medium" style={{ color: '#94a3b8' }}>URL</th>
+                  <th className="text-left py-1.5 pr-3 font-medium" style={{ color: '#94a3b8' }}>状态</th>
+                  <th className="text-left py-1.5 pr-3 font-medium" style={{ color: '#94a3b8' }}>HTTP 状态码</th>
+                  <th className="text-left py-1.5 pr-3 font-medium" style={{ color: '#94a3b8' }}>耗时</th>
+                  <th className="text-left py-1.5 pr-3 font-medium" style={{ color: '#94a3b8' }}>重试</th>
+                  <th className="text-left py-1.5 font-medium" style={{ color: '#94a3b8' }}>错误</th>
+                </tr>
+              </thead>
+              <tbody>
+                {record.results.map((r, idx) => (
+                  <tr key={idx} className="border-t border-white/5">
+                    <td className="py-2 pr-3 text-slate-300 font-medium">{r.configName}</td>
+                    <td className="py-2 pr-3">
+                      <Tooltip content={r.url}>
+                        <span className="font-mono text-xs text-slate-400 max-w-[200px] truncate block">{r.url}</span>
+                      </Tooltip>
+                    </td>
+                    <td className="py-2 pr-3">
+                      {r.success ? (
+                        <Tag theme="success" variant="light" size="small">成功</Tag>
+                      ) : (
+                        <Tag theme="danger" variant="light" size="small">
+                          {r.errorType ? (ERROR_TYPE_LABELS[r.errorType]?.label || r.errorType) : '失败'}
+                        </Tag>
+                      )}
+                    </td>
+                    <td className="py-2 pr-3 font-mono text-xs text-slate-400">{r.statusCode || '-'}</td>
+                    <td className="py-2 pr-3 font-mono text-xs text-slate-400">{formatDuration(r.duration)}</td>
+                    <td className="py-2 pr-3 font-mono text-xs text-slate-400">{r.retryCount}</td>
+                    <td className="py-2">
+                      {r.error ? (
+                        <Tooltip content={r.error}>
+                          <span className="text-xs text-red-400 max-w-[200px] truncate block cursor-default">{r.error}</span>
+                        </Tooltip>
+                      ) : (
+                        <span className="text-slate-600">-</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        )}
+
+        {/* 被跳过（未匹配）的目标 */}
+        {hasSkipped && (
+          <div className={hasResults ? 'mt-4' : ''}>
+            <div className="text-xs font-medium mb-2 uppercase tracking-wider" style={{ color: 'rgba(148, 163, 184, 0.7)' }}>
+              未匹配的目标（{record.skippedTargets!.length}）
+            </div>
+            <table className="w-full text-sm" style={{ color: '#94a3b8' }}>
+              <thead>
+                <tr className="text-xs">
+                  <th className="text-left py-1.5 pr-3 font-medium" style={{ color: '#64748b' }}>目标名称</th>
+                  <th className="text-left py-1.5 pr-3 font-medium" style={{ color: '#64748b' }}>URL</th>
+                  <th className="text-left py-1.5 font-medium" style={{ color: '#64748b' }}>跳过原因</th>
+                </tr>
+              </thead>
+              <tbody>
+                {record.skippedTargets!.map((s, idx) => (
+                  <tr key={idx} className="border-t border-white/5">
+                    <td className="py-2 pr-3 text-slate-500 font-medium">{s.configName}</td>
+                    <td className="py-2 pr-3">
+                      <Tooltip content={s.url}>
+                        <span className="font-mono text-xs text-slate-600 max-w-[200px] truncate block">{s.url}</span>
+                      </Tooltip>
+                    </td>
+                    <td className="py-2">
+                      <span className="text-xs text-amber-400/80">{s.reason}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     );
   };
@@ -449,9 +490,15 @@ const DispatchHistoryPage: React.FC = () => {
           <span className="flex items-center gap-2">
             分发详情
             {detailRecord && (
-              <Tag size="small" variant="light" theme={detailRecord.failCount > 0 ? 'warning' : 'success'}>
-                {detailRecord.failCount > 0 ? '部分失败' : '成功'}
-              </Tag>
+              detailRecord.error ? (
+                <Tag size="small" variant="light" theme="danger">异常</Tag>
+              ) : detailRecord.failCount > 0 ? (
+                <Tag size="small" variant="light" theme="warning">部分失败</Tag>
+              ) : detailRecord.matchedTargets === 0 ? (
+                <Tag size="small" variant="light" theme="default">无匹配</Tag>
+              ) : (
+                <Tag size="small" variant="light" theme="success">成功</Tag>
+              )
             )}
           </span>
         }
@@ -543,6 +590,43 @@ const DispatchHistoryPage: React.FC = () => {
                             <span className="text-red-400 break-all">{r.error}</span>
                           </div>
                         )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 未匹配（跳过）的目标 */}
+            {detailRecord.skippedTargets && detailRecord.skippedTargets.length > 0 && (
+              <div>
+                <h3 className="text-sm font-medium text-slate-400 mb-2">
+                  未匹配的目标
+                  <span className="ml-2 text-xs text-slate-500">（{detailRecord.skippedTargets.length} 个被跳过）</span>
+                </h3>
+                <div className="space-y-2">
+                  {detailRecord.skippedTargets.map((s, idx) => (
+                    <div
+                      key={idx}
+                      className="rounded-lg p-3"
+                      style={{
+                        background: 'rgba(148, 163, 184, 0.04)',
+                        border: '1px solid rgba(148, 163, 184, 0.1)',
+                      }}
+                    >
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="text-sm font-medium text-slate-400">{s.configName}</span>
+                        <Tag size="small" variant="light" theme="default">已跳过</Tag>
+                      </div>
+                      <div className="text-xs space-y-1">
+                        <div>
+                          <span className="text-slate-500">URL：</span>
+                          <span className="font-mono text-slate-500 break-all">{s.url}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500">跳过原因：</span>
+                          <span className="text-amber-400/80">{s.reason}</span>
+                        </div>
                       </div>
                     </div>
                   ))}

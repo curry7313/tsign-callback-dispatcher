@@ -1,6 +1,6 @@
 {
-  "version": 8,
-  "updatedAt": "2026-03-26T06:10:12.805Z",
+  "version": 9,
+  "updatedAt": "2026-03-30T12:55:13.375Z",
   "callbacks": [
     {
       "name": "测试配置",
@@ -72,6 +72,33 @@
       "id": "68784318-b3b7-4581-ad02-deadc1265c5c",
       "createdAt": "2026-02-27T02:35:40.535Z",
       "updatedAt": "2026-03-26T06:10:12.805Z"
+    },
+    {
+      "name": "测试",
+      "url": "https://baidu.com",
+      "appType": "company",
+      "tags": [
+        {
+          "key": "MsgData.FlowName",
+          "value": "test",
+          "matchMode": "prefix"
+        }
+      ],
+      "matchRules": [],
+      "enabled": true,
+      "retryCount": 3,
+      "timeout": 10000,
+      "headers": {},
+      "msgTypes": [],
+      "unknownMsgTypePolicy": "dispatch",
+      "builtInTagMissPolicy": "dispatch",
+      "encryptKey": "d23cf6d38626ede8a573c176373e3c5f",
+      "signToken": "b16d24b7ff7a676d09d7516d2bd53ddb",
+      "reEncrypt": false,
+      "remark": "",
+      "id": "bdb5d2dc-da0b-4b69-bdd5-342c03bd8acc",
+      "createdAt": "2026-03-30T12:55:13.375Z",
+      "updatedAt": "2026-03-30T12:55:13.375Z"
     }
   ]
 }
